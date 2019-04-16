@@ -1,0 +1,91 @@
+\section{Description}
+\label{sub:description}
+
+\subsection{What is a Container}
+\label{sub:container}
+Containers are a modern version of capabilities that have been available in Unix operating system Solaris for decades, in that you can run processes in isolation to the rest of the operating system \citep{oracle_solaris}. When it comes to applications, traditionally one would have a virtual machine which would house the application. This would mean the applications processes would run in isolation to the operating system on its host but it does this with the cost of a massive over head in that of the entire virtual machines operating system consumers memory and resources \citep{yegulalp_2018}.
+
+Containers are a means that looks at how to run applications and processes in isolation, and they do this by giving applications a partitioned segment of the hosts operating system. This is managed by the container run time environment, while there is many run time environments that support OCI containers for the majority of this paper the focus will be on Dockers run time called libcontainer \citep{docker_2018}.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/docker-view.png}
+\caption{\em Docker Container vs Virtual Machine (image from Docker)}
+\label{img:docker_vm}
+\end{figure}
+
+Figure \ref{img:docker_vm} paints a clear picture of the difference between a conventional system of applications running on a virtual machines (VMs) and applications running in containers. As can be seen from the figure, VMs are an abstraction of the physical hardware. The hypervisor allows multiple VM's run on a single hosts operating system. Each VM has is own operating system along with all the binaries, libraries and packages needed for the applications. 
+
+Where as in the Figure \ref{img:docker_vm} it can be seen that containers are more of an abstraction at the application layer. As with VMs multiple containers can run on the same machine, but unlike VMs, containers share the OS kernel, all running in isolation based on a given space \citep{docker_2018}. 
+
+An understanding of cgroups and namespaces is needed to understand how containers share the OS kernel. It is these features that build the boundaries between containers and processes running on a host \citep{yegulalp_2018}. 
+
+\subsection{Control Groups}
+\label{sub:cgroups}
+
+Control Groups or Cgroups for short allow for the allocation of resources such as CPU time, system memory, network bandwidth or a combination of the resources. cgroups allow for the fine-grained control over allocating, prioritizing, denying and managing system resources. Management of these resources increase overall efficiency.
+
+It must be noted that all processes on a Linux based system are child processes of a common parent. The \textit{init} process, which is executed at boot time by the kernel starts all other processes. Thus the Linux process model is a single hierarchical tree. 
+
+Cgroups share similarities in that they are hierarchical and child cgroups inherit some attributes from their parent cgroup. This allows for simultaneous crgoups on a system. To paint a clearer picture if we describe the Linux process model as a single tree of processes, then the cgroup model is made up of one or many unconnected trees of processes \citep{cgroups_2018}.
+
+\subsection{Namespaces}
+
+Namespaces act similar to cgroups in that they deal with resource isolation, but unlike cgroups which deals with a number processes, Namespaces only isolate a single process. Linux Namespaces wrap a global system resource and makes it appear to the processes within its namespace that the global system resource is dedicated to that process \citep{namespaces}.
+
+Furthermore these namespaces are broken into six different types, each namespace wraps a particular global resource. Due to this the overall nature of namespaces is to support the implementation of containers \citep{kerrisk_2013}.
+
+\subsubsection{UTS namespaces}
+In the space of containers, the UTS namespaces allow each container to have its own hostname and NIS domain name. This is used for the initialization and config scripts that take action based on the namespace. The term UTS gets its name from the 'Unix Time-Sharing System" \citep{kerrisk_2013}
+
+\subsubsection{IPC namespaces}
+IPC namespaces allow for its own interprocess comminication resource. In other words it provides shared memory spaces for accelerated communication (POSIX message queue filesystem) \citep{kerrisk_2013}.
+
+\subsubsection{PID namespaces}
+PID namespaces isolate the process ID number space. To put differently processes in different PID namespaces can have the same PID. The main benefit to this is that containers can be migrated between hosts and keep the same process IDs for all processes inside the container \citep{kerrisk_2013}.
+
+\subsubsection{Network namespaces}
+Network namespaces provide isolation network resources in that each network namespace has its own network devices, IP routing tables, port numbers, IP addresses etc. Network namespaces make containers extremely powerful from a network perspective. In that you could have multiple containers on the same host all bound to port 80 in their own network namespace \citep{kerrisk_2013}. Given that each container has its own virtual networking, tools like Docker Swarm and Kubernetes utilize this and provide suitable networking rules on the host.
+
+\subsubsection{User namespaces}
+\label{sub:username}
+User namespaces isolate the user and group ID number spaces. This means a process's user and group ID's can be different inside and outside of a user namespace. A typical use case would be a process would have full root privileges for operations within the user namespace but is unprivileged for operation outside the namespace \citep{kerrisk_2013}.
+
+\subsubsection{Mount namespaces}
+Mount namespaces isolate filesystem mount points seen by a group of processes. This allows for processes in different mount namepaces to have different views of a filesystem hierarchy \citep{kerrisk_2013}.
+
+\subsection{Capabilities}
+\label{sub:capabilities}
+As Linux capabilities are mention during the practical element in Section \ref{sub:escape} it is worth providing some theory background here on what Linux capabilities are.
+
+Traditional UNIX systems has two categories of processes, privileged and unprivileged. Privileged processes are identified as user ID 0, or also known as superuser or root. Where as unprivileged processes have a UID of nonzero \citep{linux-manual}.
+
+\subsection{Open Container Initiative}
+The Open Container Initiative was established in June 2015 by Docker, CoreOS and many other leaders in the container industry. The purpose of the initiative was to create open industry standards around container formats and runtime. Currently the OCI have two specifications, the runtime specification and the image specification \citep{oci}. 
+
+The purpose of these specifications is to ensure that all OCI compliant technologies are interoperable with each other, thus reducing the likely hood of a major company take over controlling the entire Container market.
+
+Due to the interoperablity of OCI compliant containers the rest of this paper will focus on Docker, but all topics covered are applicable to not just Docker but all OCI compliant technologies.
+
+\subsection{Docker}
+\label{sub:dock}
+Dockers underlying architecture can be described as a client and server (docker daemon) based. This is shown in Figure \ref{img:docker-arch}, the server receives requests from the client through a RESTful API. The API along with a command line client are shipped by Docker. Due to make up of the architecture it allows for the docker daemon and client to run on the same machine or alternatively the client can connect to a remote docker daemon \citep{rad_bhatti_ahmadi_18}. It is the Docker daemon which orchestrates and manages all containers and images on the host where as the client is the control of the daemon.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/docker-arch.png}
+\caption{\em Docker Architecture (image from Docker)}
+\label{img:docker-arch}
+\end{figure}
+
+Also depicted in Figure \ref{img:docker-arch} is a Docker Image. A Docker image is essentially an immutable snapshot of a container. Running a Docker build command creates images. It is from this created image that a container is created by the Docker run command. Generally images are stored on a registry and will be demonstrated in Section \ref{sub:practical}. 
+
+Docker Hub would be a main source for storing Docker images, and it itself is a huge security risk, as the Hub allows anybody to push their images to be used by themselves or other people. A study carried out in 2016 showed out of 352,416 community images tested on Docker Hub the worst image contained almost 1,800 vulnerabilities, with of 3,892 official images tested the worst image contained almost 800 vulnerabilities \citep{colyer_2017}. The topic of Docker image authenticity is covered in Section \ref{sub:authent}.
+
+\subsection{Description Summary}
+So we have looked at what a container is and compared it to a traditional virtual machine. It was discussed how containers use control groups and namespaces to isolate processes from those of other containers and the host machine. We outlined what the Open Container Initiative is and discussed the architecture of Docker. Backed by the knowledge learned, we will look at a number of use cases based on a number of security services in Section \ref{sub:practical}.
+
+
+
+
+

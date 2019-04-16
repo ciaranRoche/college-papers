@@ -1,0 +1,166 @@
+\section{Prerequisites}
+A number of prerequisites are needed in order to complete or follow any examples outlined in this paper.
+\begin{itemize}
+    \item Dep version v0.5.0+.
+    \item Git.
+    \item GoLang version v1.10+.
+    \item Docker version 17.03+.
+    \item Kubectl version v1.11.0+.
+    \item Kubernetes v1.11.0+ cluster. (Minikube)
+\end{itemize}
+
+\newpage
+\section{Introduction}
+This report looks to answer the question, "What is a Kubernetes Operator?". To help answer this question we will look at an Operator in use throughout this introduction. Gaining the hands on experience of an Operator working now will aid in further understanding and explanations over the course of this paper.
+
+\subsection{etcd}
+\label{sub:etcd}
+etcd is a distributed key-value store, in fact the primary key-value story for Kubernetes. Its job is the storing and replicating of all Kubernetes cluster state. It is a critical component of a Kubernetes cluster, as it deals with maintaining quorum, cluster reconfiguration, creation of backups, disaster recovery etc. Normally to implement this kind of work requires a specific expertise. Through the use of an etcd Operator this work is now easier as the Operator handles lots of the heavy lifting which was once carried out by a sys admin \citep{coreos}. I feel this is summarized nicely in Figure \ref{img:op_def} where it is defined that "An Operator represents human operational knowledge in software, to reliably manage an application."
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/op1.png}
+\caption{\em Image from CoreOS}
+\label{img:op_def}
+\end{figure}
+
+The elements of the etcd Operator are as follows:
+\begin{itemize}
+    \item Create/Destroy
+    \item Resize
+    \item Recover
+    \item Backup
+    \item Upgrade
+\end{itemize}
+
+Before running an example of the above mentioned elements, we need to gain some understanding into how the operator simulates human behaviors. It follows the common Operator pattern in that is watch's for changes and then acts. CoreOS etcd summarizes it as three steps, Observe, Analyze and Act. It observes the current state of the cluster through leveraging the Kubernestes API, It then analyzes the current state and if it notices a difference from the desired state it then acts to fix the difference and return the cluster to the desired state. With a high level view of how the etcd operator behaves lets dive into some practical examples.
+
+\subsection{Create/Destroy}
+To setup first I cloned the CoreOS etcd Operator onto my GOPATH, the github repo can be found in Appendix \ref{appendix:coreosetcd}. With the operator cloned I opted to take advantage of the included example. First was to deploy the operator by running the example deployment, this can be seen in Figure \ref{img:op_2}.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op2.png}
+\caption{\em Operator Create Command}
+\label{img:op_2}
+\end{figure}
+
+With the operator deployed, we included a desired state of 3 replicas. This can be seen in Figure \ref{img:op_3} showing we have 3 example pods running.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op3.png}
+\caption{\em kubectl get pods after create}
+\label{img:op_3}
+\end{figure}
+
+\begin{figure}[!hb]
+\centering
+\includegraphics*[width=1\textwidth]{images/op4.png}
+\caption{\em Operator Delete Command}
+\label{img:op_4}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op5.png}
+\caption{\em kubectl get pods after delete}
+\label{img:op_5}
+\end{figure}
+\newpage
+Due to Operators extending the Kubernetes API we can run as normal a kubectl delete command seen in Figure \ref{img:op_4} to delete our pods. After issuing the command we can see in Figure \ref{img:op_5} our pods being terminated.
+
+\subsection{Resize}
+Since we deleted our pods in the previous steps we can simply update the operator by running the command seen in Figure \ref{img:op_6}. The command will update the operator and set our desired state to 3 replica sets. This can be seen in Figure \ref{img:op_7}.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op6.png}
+\caption{\em Apply Operator}
+\label{img:op_6}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op7.png}
+\caption{\em kubectl get pods after update}
+\label{img:op_7}
+\end{figure}
+
+If we refer to Figure \ref{img:op_9} we see the config for our custom resource definition. If we update the size to 5, telling our operator we want a desired state of 5 pods in our cluster. With the CRD updated we run the apply command as seen in \ref{img:op_8} to update the operator. Also seen in Figure \ref{img:op_8} is an added pod as the operator begins to act on the current state of the cluster based on the recent update.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op8.png}
+\caption{\em apply update and get pods}
+\label{img:op_8}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op9.png}
+\caption{\em etcd custom resource definition}
+\label{img:op_9}
+\end{figure}
+
+\subsection{Recover}
+So far the operations we have demonstrated could also be easily taken care of by the Kubernetes API, the recover element to the Operator will show some of the power behind an Operator and the added value it brings to deployments.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op911.png}
+\caption{\em get pods}
+\label{img:op_11}
+\end{figure}
+
+If we look at Figure \ref{img:op_11} we can see that we currently have 5 example pods running within our cluster. We are going to simulate a failure but deleting one of these pods and watch out the operator acts to restore the state of the cluster. 
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op912.png}
+\caption{\em delete a pod}
+\label{img:op_12}
+\end{figure}
+
+As we can see in Figure \ref{img:op_12}, we delete one of our running pods, on running the get pods command after the successful deletion we can see in Figure \ref{img:op_13} a new pod has be initialized and the desired state has been restored to our cluster.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op913.png}
+\caption{\em new cluster state}
+\label{img:op_13}
+\end{figure}
+
+We have now seen how the etcd operator manages the state of the cluster if a pod fails, the following steps shows how an operator recovers if it itself fails. For this we are going to simulate an operator failing and also an example pod failing. Note I have configured an alias for \textit{kubectl}.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op914.png}
+\caption{\em Delete operator}
+\label{img:op_14}
+\end{figure}
+
+As can be seen in Figure \ref{img:op_14} we have terminated the operator within our cluster. Figure \ref{img:op_15} shows the deletion of a pod from our cluster
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op915.png}
+\caption{\em Delete a pod}
+\label{img:op_15}
+\end{figure}
+
+With both an operator and a pod deleted from our cluster Figure \ref{img:op_16} shows the operator being redeployed to our cluster and if we look at Figure \ref{img:op_17} we can see the operator running within our cluster and it has observed the current state not being what is desired and has acted to initialize a new pod to restore our cluster to its defined state.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op916.png}
+\caption{\em Launch Operator}
+\label{img:op_16}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/op917.png}
+\caption{\em new cluster state}
+\label{img:op_17}
+\end{figure}
+\newpage
+\subsection{etcd Operator Summary}
+We have looked at some of the basic operations of an etcd Operator to try gain an understanding of what is an Operator and the purpose of it. Through the introductory examples it should lead to a greater understand of the theory behind Operators explained in Section \ref{sub:theory}. If we reference Figure \ref{img:op_18} to show the logic behind the etcd Operator and remember the actions, observe, analyze and act as we will delve into this logic in detail.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/op918.png}
+\caption{\em etcd Operator Logic}
+\label{img:op_18}
+\end{figure}
+

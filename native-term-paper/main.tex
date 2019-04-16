@@ -1,0 +1,235 @@
+\documentclass{article}
+
+%-----------------------------------------------PACKAGES-------------------------------------------------------------%
+\usepackage{graphicx} %images
+\DeclareGraphicsExtensions{.pdf,.png,.jpg} % configures latex to look for the following image extensions
+\usepackage{setspace} % allows for configuring the linespacing in the document
+\usepackage{caption}
+\usepackage{natbib}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage[explicit]{titlesec}
+\usepackage[toc,page]{appendix}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{cleveref}
+\setcounter{tocdepth}{2}
+\usepackage[nottoc]{tocbibind}
+\usepackage[parfill]{parskip}
+\usepackage[english]{babel}
+\usepackage{blindtext}
+\usepackage{color}
+\usepackage{listings}
+
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  frame=single,
+  breaklines=true,
+}
+
+
+
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+
+
+\usepackage{hyperref}
+\newcommand\myshade{85}
+\colorlet{mylinkcolor}{NavyBlue}
+\colorlet{mycitecolor}{YellowOrange}
+\colorlet{myurlcolor}{Aquamarine}
+
+\hypersetup{
+  linkcolor  = mylinkcolor!\myshade!black,
+  linktocpage=true,
+  citecolor  = mycitecolor!\myshade!black,
+  urlcolor   = myurlcolor!\myshade!black,
+  colorlinks = true,
+}
+
+\bibliographystyle{agsm}
+\setcitestyle{authoryear,open={(},close={)}}
+
+\begin{document}
+\onehalfspacing
+\hypersetup{pageanchor=false}
+\include{components/college_title}
+\hypersetup{pageanchor=true}
+\clearpage
+\begin{center}
+\begin{minipage}{\textwidth}
+  
+  {\scshape\large \textbf{Plagiarism Declaration}\par}
+  \vspace{1cm}
+  Unless otherwise stated all the work contained in this report is my own.  I also state that I have not submitted this work for any other course of study leading to an academic award.
+\end{minipage}
+\end{center}
+\vfill % equivalent to \vspace{\fill}
+\clearpage
+
+\tableofcontents
+
+\newpage
+
+
+\newpage
+\include{components/introduction}
+
+\newpage
+\include{components/theory}
+
+\newpage
+\include{components/practical}
+
+\newpage
+\include{components/summary}
+
+\newpage
+\appendix
+\section*{Appendices}
+\label{appendix:app}
+\addcontentsline{toc}{section}{Appendices}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+\subsection{Google Cloud Knative} 
+\label{appendix:gck}
+https://cloud.google.com/knative/
+
+\subsection{Knative Docs}
+\label{appendix:docs}
+https://github.com/knative/docs/
+
+\subsection{Knative Build}
+\label{appendix:build}
+https://github.com/knative/build
+
+\subsection{Knative Event}
+\label{appendix:event}
+https://github.com/knative/eventing
+
+\subsection{Knative Serve}
+\label{appendix:serve}
+https://github.com/knative/eventing
+
+\subsection{Kubernetes Docs}
+\label{appendix:k8}
+https://kubernetes.io/docs/home/
+
+\subsection{RubiX Functions Docs}
+\label{appendix:r3x}
+https://github.com/rubixFunctions/r3x-docs
+
+\subsection{RubiX Showcase}
+\label{appendix:r3xshow}
+https://github.com/rubixFunctions/r3x-showcase-apps
+
+\subsection{RubiX Showcase Demo Video}
+\label{appendix:r3xdemo}
+https://youtu.be/LA1nVQK8ETQ
+
+\subsection{Hey}
+\label{appendix:hey}
+https://github.com/rakyll/hey
+
+\subsection{Showcase Deployment File}
+\label{appendix:deploy}
+\begin{lstlisting}[language=bash]
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: r3x-rubix-create
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: docker.io/muldoon/r3x-rubix-create
+            env:
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: /var/secret/rubix.json
+            volumeMounts:
+              - name: rubix-secret
+                mountPath: /var/secret
+          volumes:
+            - name: rubix-secret
+              secret:
+                secretName: google-rubix-secret
+---
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: r3x-rubix-delete
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: docker.io/muldoon/r3x-rubix-delete
+            env:
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: /var/secret/rubix.json
+            volumeMounts:
+              - name: rubix-secret
+                mountPath: /var/secret
+          volumes:
+            - name: rubix-secret
+              secret:
+                secretName: google-rubix-secret
+---
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: r3x-rubix-dictate
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: docker.io/muldoon/r3x-rubix-dictate
+            env:
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: /var/secret/rubix.json
+            volumeMounts:
+              - name: rubix-secret
+                mountPath: /var/secret
+          volumes:
+            - name: rubix-secret
+              secret:
+                secretName: google-rubix-secret
+---
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: r3x-rubix-list
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: docker.io/muldoon/r3x-rubix-list
+            env:
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: /var/secret/rubix.json
+            volumeMounts:
+              - name: rubix-secret
+                mountPath: /var/secret
+          volumes:
+            - name: rubix-secret
+              secret:
+                secretName: google-rubix-secret
+\end{lstlisting}
+
+
+
+
+\end{document}
+

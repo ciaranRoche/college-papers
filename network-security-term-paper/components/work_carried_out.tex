@@ -1,0 +1,311 @@
+\section{Work Carried Out}
+\label{sub:practical}
+The work carried out will look at container security threats with an emphasis on Docker. Each element will be divided into a number of sections. Out lining the threat description, what the attack could be and why it affects Docker. We will then look at the best practices in Docker to prevent this kind of security threats. Finally look at a reproducible proof of concept to showcase the threat.
+
+Each element below will fall into one of the following security services, authentication, access control, data confidentiality, data integrity, non-repudiation and availability. Authentication is the correct identification of an entity or a source of data. Access control is who can access what and in what way. Data confidentiality is the non-disclosure to external parties. Data integrity is the correctness of data. Non-repudiation is the proof that communication actually took place. Finally availability is to ensure that a system is available when it is required. 
+
+Label \ref{tab:prac-sec} categorizes each element to a particular security service. 
+
+\begin{table}[!ht]
+\begin{center}
+\begin{tabular}{ ||c|c|| } 
+ \hline
+ \textbf{Security Service} & \textbf{Section} \\ 
+ \hline
+ \hline
+ Authentication & \ref{sub:escape}, \ref{sub:authent}, \ref{sub:cred-secre} \\
+ Access Control & \ref{sub:hostd} \\
+ Data Confidentiality & \ref{sub:cred-secre}, \ref{sub:static-image} \\
+ Data Integrity & \ref{sub:escape}, \ref{sub:authent} \\
+ Non-Repudiation & \ref{sub:cred-secre} \\
+ Availability & \ref{sub:abuse} \\
+ \hline
+ \hline
+\end{tabular}
+\caption{\em Security Service Elements}
+\label{tab:prac-sec}
+\end{center}
+\end{table}
+
+\subsection{Docker Host and Kernel Security}
+\label{sub:hostd}
+\subsubsection{Description}
+If a host system is compromised the container isolation outlined in Section \ref{sub:container} will not make any difference. From Figure \ref{img:docker_vm} we saw that container run on top of the host kernel. This gives the advantages of being efficient over conventional virtual machines, but from a security perspective it can be seen as a risk.
+\subsubsection{Best Practices}
+Docker supply a bench auditing tool which will be discussed and demonstrated in Section \ref{sub:auditDocker} with a number of Open Source auditing tools available will also be discussed and demonstrated in Section \ref{sub:auditSource}. These tools as a whole check the configuration for best practices. 
+
+It is often the case with building containers to simply fire and forget. This is due the choice of base image which was discussed in Section \ref{sub:dock} or even how Docker blocks certain behaviour on a container. It is often good practice to enforce your own Mandatory Access Control. This will resolve any unwanted operations, these controls can be placed at both the host and on the container at the kernel level and can be utilized from many tools including Seccomp, SELinux, and AppArmor. For the purpose of this paper we will look at using Seccomp. The profile used will be from Moby which is a Docker backed project and can be found at Appendix \ref{appendix:seccomp}. A simple rule of thumb for building containers if I don't need why have it there.
+
+\subsubsection{Proof of Concept}
+Seccomp can be thought of as a firewall for the kernel call interface. Regardless of this some calls are already blocked by default Docker profile:
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term1.png}
+\caption{\em Kernel Security Demo 1}
+\label{img:demo1}
+\end{figure}
+
+As we can see from Figure \ref{img:demo1} we have run a standard docker alpine image and started a bash session in the container. When we ran \textit{whoami} we can see that we have \textit{root} access. As can be seen Docker as standard blocks the \textit{mount} call but does not block the \textit{chmod} call. Allowing us to modify permissions on files and folders.
+
+This can be rectified by applying our own Seccomp profile to the container. If we check Appendix \ref{appendix:seccomp} we can see a list of syscalls on line 52 which are whitelisted. If we remove \textit{chmod} from the list and run our container with the \textit{--security-opt} flag we can see we have successfully blocked the use of the \textit{chmod} call.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term2.png}
+\caption{\em Kernel Security Demo 2}
+\label{img:demo2}
+\end{figure}
+\newpage
+\subsection{Docker Container Escape}
+\label{sub:escape}
+\subsubsection{Description}
+To escape or breakout from a container is the term used to when container isolation checks have been bypassed. Allowing an attacker to gain access to sensitive information from the host or gaining additional privileges. One of the most popular escapes in containers is the Dirty COW exploit CVE-2016-5195 \citep{cve-2016-5195}. The Dirty Cow is a race condition found in the way Linux kernel's memory subsystem handles the copy-on-write breakage of private read-only memory mapping. Allowing an unprivileged user to gain write access to read-only memory mappings. As this exploit is known it is often patched but the CVE affects all Linux kernels, thus enforcing the importance of maintaining an updated container.
+
+Away from the exploit Docker daemon runs as root by default. It is good practice to create a user-level namespace or simply drop some of the container root capabilities.
+
+\subsubsection{Best Practices}
+As mentioned previous, if I don't need it why do I have it. So dropping capabilities that are not required by the software within the container is a must. For example, \textit{CAP\_SYS\_ADMIN} grants a wide range of root level permissions. Micheal Kerrisk is quoted saying "CAP\_SYS\_ADMIN is the new root \citep{kerrisk_2012}. Dropping these kind of capabilities is a must for a secure container.
+
+As discussed in Section \ref{sub:capabilities} docker container run as UID 0 to avoid this a user should be created in an isolated user namespace limiting the privileges over that of the host regular user.
+
+If a you have to run a privileged container, always check that it is from a trusted source which is discussed in Section \ref{sub:authent}.
+
+Always check your mount points from the host. For instance the Docker socket /var/run/docker.sock, /proc, /dev are special mounts that perform the containers core functionality. Insure you understand the why and the how to limit processes from gaining access to this privileged information. Sometimes it is enough just to expose the file system with read-only privileges. 
+\subsubsection{Proof of Concept}
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.9\textwidth]{images/term3.png}
+\caption{\em Container Escape Demo 1}
+\label{img:demo3}
+\end{figure}
+Docker by default allows the root account to create device files, you should restrict this if your application does not require it. As you can see from Figure \ref{img:demo3} we run an alpine image and can easily create a device file. Where as if we launch an alpine image with the flag \textit{--cap-drop=MKNOD} the operation is not permitted.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.9\textwidth]{images/term4.png}
+\caption{\em Container Escape Demo 2}
+\label{img:demo4}
+\end{figure}
+A root user will override any file permissions by default. It is good practise to restrict this in containers using different users which may contain mounts with sensitive data. As can be seen from Figure \ref{img:demo4} we launch a ubuntu image. Create a new user and user home directory. We create a file and pipe some text to it. We set the permissons to \textit{600} so that only the owner can read and write to the file. We exit back to root user and as can be seen root is able to \textit{cat} the file. 
+
+Whereas when we launch a ubuntu image with the flag \textit{--cap-drop=DAC\_OVERRIDE} if we complete the same steps the root user is denied from reading the file.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.9\textwidth]{images/term6.png}
+\caption{\em Container Escape Demo 3}
+\label{img:demo6}
+\end{figure}
+
+\textit{Cap-drop} is an extremely powerful command, as if we refer to Appendix \ref{appendix:capab} we can see a number of Linux capabilities which are allowed by default and need to be manually dropped. For instance \textit{NET\_RAW} is the capability to use RAW and PACKET sockets, this is common method for security scanners and malware tools. 
+
+
+
+As you can see from Figure \ref{img:demo6} we launch an nmap container with no problems, if a container has been compromised an attacker first port of call may be to see what ports are open this is a serious vulnerability in the case if our application does not need the use of RAW and PACKET sockets, why have it as a capability in our container. Where as using the \textit{CAP-DROP} flag we can also see from Figure \ref{img:demo6} that the operation is not permitted.
+
+\newpage
+\subsection{Docker Image Authenticity}
+\label{sub:authent}
+\subsubsection{Description}
+Docker images are littered across repositories on the Internet. But if you are pulling images without using any trust and authenticity you could be running any kind of software on your host devices. A number of questions you should ask yourself before pulling an image.
+\begin{itemize}
+    \item Where did the image come from?
+    \item Do I trust the creator? What are their security policies?
+    \item Is there any means to cryptographically prove that the author is who they say they are?
+    \item How do I know no one has tampered with the image after I have pulled it
+\end{itemize}
+Docker allows you to pull and run any image from any source as standard. So even if you are using your own images you need to ensure no one else tampers with them. It often boils down to a Public Key chain of trust.
+\subsubsection{Best Practices}
+As with any piece of software it comes down to common sense, never run something that you do not explicitly trust the sources. To err on the side of caution it is always worth enforcing mandatory signature verification for any image that is to be pulled and or run on a host.
+\subsubsection{Proof of Concept}
+For this proof of concept it will show how to enable public key chain of trust on images.
+
+If we refer to Figure \ref{img:demo8} there is a lot going on there, so we shall break it down. We have created a project called \textit{my-example} in it we have a \textit{Dockerfile}. This \textit{Dockerfile} just pulls an alpine image. Next we build this image an call it \textit{muldoon/alpineunsigned} muldoon being my own Docker Hub user name.
+
+Next we login to Docker using our Docker Hub credentials. Now we can push our unsigned image to our Docker Hub. Finally if we export \textit{DOCKER\_CONTENT\_TRUST} and equal it to 1. This enables Docker trust enforcement. And as can be seen from Figure \ref{img:demo8} if we try to pull the image we get trust error.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term8.png}
+\caption{\em Docker Image Authenticity 1}
+\label{img:demo8}
+\end{figure}
+\newpage
+Now if we build another image this time using the flag \textit{--disable-content-trust} and set it to false it will build the container and sign it by default. This can be seen in Figure \ref{img:demo9}
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term9.png}
+\caption{\em Docker Image Authenticity 2}
+\label{img:demo9}
+\end{figure}
+
+With our newly signed container built we can push the image to our Docker Hub. This time we get asked to create a two passphrases. One for our root key and the other for the repository. The root key or offline key as it is also known is only needed for the creation of new repositories associated with the account. And the repository key is used for the image we just pushed so that we can identify it. This can be seen in Figure \ref{img:demo10}. With the image pushed to our Docker Hub it can be seen that we can pull the image with no trust errors.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term10.png}
+\caption{\em Docker Image Authenticity 3}
+\label{img:demo10}
+\end{figure}
+
+\subsection{Docker Resource Abuse}
+\label{sub:abuse}
+\subsubsection{Description}
+As discussed in Section \ref{sub:container}, containers are lightweight in comparison to Virtual Machines, this means we can deploy multiple containers on our hardware. But with lots of entities comes the fight for resources. Be it bugs in the applications or deliberate attacks a Denial of Service can easily happen consuming all the resources on a host leaving none for the containers. 
+\subsubsection{Best Practices}
+Limits to resources are in fact disabled by default, so configuring of resources before deployment is a must. One method to limit resources is to utilize the resource limitation features that come with the Linux kernel. Another method is to stress test containers as part of the CI/CD cycles. Load testing is crutial when it comes to knowing the physical limits to the operations of containers. And finally make use of tooks for monitoring and alerting when resources are low.
+\subsubsection{Proof of Concept}
+For this proof of concept we will use cgroups that was discussed in Section \ref{sub:cgroups} to limit resources to a container. We can do this simply by running the command seen in Figure \ref{img:demo11}. As we want to test the limitations of 2G memory has been set we need to install \textit{stress} tool on the machine, so first need to run an \textit{apt-get update}
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term11.png}
+\caption{\em Docker Resource Abuse 1}
+\label{img:demo11}
+\end{figure}
+
+With our ubuntu container updated, we can run the command seen in Figure \ref{img:demo12} to install \textit{stress}.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term12.png}
+\caption{\em Docker Resource Abuse 2}
+\label{img:demo12}
+\end{figure}
+
+Once stress is installed we run the command seen in Figure \ref{img:demo13} to stress test our container. 
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term14.png}
+\caption{\em Docker Resource Abuse 3}
+\label{img:demo13}
+\end{figure}
+
+As we have set the limits to 2GB main memory, with 3GB in total to include \textit{swap}. Swapping is a technique that allows a computer to execute programs and manipulate files that are larger then main memory \citep{centos}. We can see from Figure \ref{img:demo13} that we are stressing the container with over 8GB of memory usage. As can be seen this fails. If we run \textit{Docker Stats} in a separate terminal on the host machine, we can see the container usage spike before the process is killed. As the process is looking for more resources then the cgroup will allow the process is killed.
+
+
+
+\subsection{Docker Vulnerabilities in Static Images}
+\label{sub:static-image}
+\subsubsection{Description}
+As containers as essentially isolated, if they are acting as expected it is easy to forget the underlying architectures and dependence's. As vulnerabilities are found daily it is important to have the appropriate measures in place to test containers to ensure any security flaws are patched and updated as soon as possible.
+\subsubsection{Best Practices}
+A simple but not fully effective solution would be to rebuild and update images periodically to ensure the latest patches are applied. This does have the over head of re-testing your containers to ensure no patch's have broke the application. 
+
+While live-patching containers is considered a bad practice, Docker and tools like Kubernetes often provide the means to roll out updates without disrupting uptime of the application.
+
+As said many times through out this paper, if you do not need it why have it. This applies here as keeping a container simple and minimal will reduce the attack surface and also reduce the need for frequent updates.
+
+The number one approach is to provide some sort of vulnerability scanner. This will be looked at in detail in Section \ref{sub:auditSource} and Section \ref{sub:auditDocker}. These tools check containers for all known vulnerabilities and can be incorporated in CI/CD.
+\subsubsection{Proof of Concept}
+As this paper looks at auditing tool for vulnerabilities in images in a later section, we will look at using a different registry service to Docker hub. 
+
+CoreOS Quay repository uses the open source security image scanner Clair. Despite being aimed for commercial use a lot of Quay's services are free to use. With an account set up on Quay.io it is easy to incorporate it into a work flow over using the conventional \textit{Docker push} which we saw earlier in the paper. 
+
+As can be seen from Figure \ref{img:demo16} we have an image called \textit{muldoon/test-server:latest} running. We just need an extra step over directly pushing it to a registry as we do with Docker Hub, this time we need to commit it to a repository that we have created on Quay. In this case the repository that was created was called \textit{quay.io/ciaranroche/test-image}. The steps in creating the repository have been left out for brevity. 
+
+With the image commit to the repository it is only a matter of pushing to the repository. A similar pattern seen from the likes of GitHub.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term16.png}
+\caption{\em Docker Vulnerabilities in Static Images 1}
+\label{img:demo16}
+\end{figure}
+
+Once the image has been pushed into the repository we can navigate to the Quay account, and from there inspect the image security scan. As can be seen from Image \ref{img:demo17} no known vulnerabilities have been found. If they had been known vulnerabilities we would receive a link to the CVE and also any upstream patched package versions.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term17.png}
+\caption{\em Docker Vulnerabilities in Static Images 2}
+\label{img:demo17}
+\end{figure}
+
+\subsection{Docker Credentials and Secrets}
+\label{sub:cred-secre}
+\subsubsection{Description}
+Due to the dynamic nature of containers in that you do not just set up a server so to speak, containers are constantly created, destroyed and or updated. Due to this nature a secure process is needed to share sensitive info, be it user password hashes, encryption keys etc.
+\subsubsection{Best Practices}
+A common practice is storing secrets in environment variables, this is very insecure. Instead use a Docker credentials management software to manage your secrets. As a general rule of thumb never leave credentials and or secrets in a container, an IBM report can be quoted in saying "it is the same as leaving a jail cell's keys inside the jail cell" \citep{ibm}.
+\subsubsection{Proof of Concept}
+Figure \ref{img:demo18} shows how to capture environment variables in a docker container. We launch an alpine image with a password. Once on a bash instance on the container if we simply run \textit{env | grep pass} we can see the password is stored in plan text inside the container.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term18.png}
+\caption{\em Docker Credentials and Secrets}
+\label{img:demo18}
+\end{figure}
+
+With the growth in popularity of orchestration systems such as Docker Swarm or Kubernetes. They all provide a basic secret management system. For this I switch over to a Ubuntu Virtual Machine to avoid an configuration errors with my own personal machine. From Figure \ref{img:demo19} we launch docker and create a \textit{secret.txt} file and pipe in a secret.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term19.png}
+\caption{\em Docker Credentials and Secrets 2}
+\label{img:demo19}
+\end{figure}
+
+With a base secret file created on our host Virtual Machine, we launch Docker Swarm, and assign an IP address to be advertised, this is crucial in initializing Docker Swarm as the address is advertised to all members of the swarm and allows member API access and overlay networking, it will be used under the hood for us when we retrive the key later on. The initalize command can be seen in Figure \ref{img:demo20}
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term20.png}
+\caption{\em Docker Credentials and Secrets 3}
+\label{img:demo20}
+\end{figure}
+
+Next we need to create a secret this can be seen in Figure \ref{img:demo21} where we create a secret called somesecret and specify the \textit{secret.txt} we created earlier.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term21.png}
+\caption{\em Docker Credentials and Secrets 4}
+\label{img:demo21}
+\end{figure}
+
+With the secret created and our swarm initalised we now create an nginx container and specify the created secret as can be seen in Figure \ref{img:demo23}.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term23.png}
+\caption{\em Docker Credentials and Secrets 5}
+\label{img:demo23}
+\end{figure}
+
+Finally if we log into the nginx container we can retrieve the secret seen in Figure \ref{img:demo24}. This is been retrived from Docker Swarm and is not stored in the container. If we run \textit{ls -l} we can see only root can read the secret with no other access.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term24.png}
+\caption{\em Docker Credentials and Secrets 6}
+\label{img:demo24}
+\end{figure}
+
+It has to be noted this is at a very minimum of security. But it does mean that secrets are stored properly and you can rotate and revoke them as you wish from Docker Swarm.
+\newpage
+\subsection{Container Auditing}
+\subsubsection{Docker Bench Audit Tool}
+\label{sub:auditDocker}
+The Docker Bench for Security is a docker container that runs a script to check for common best-practices around deploying Docker containers. It has to be noted that the container is run with a lot of privileges for instance it shares the host's filesystem along with pid and network namespaces. For this case you must insure you trust the container and its origins before running it on a host system \citep{github_docker_2018}. 
+
+For this test I ran multiple containers on a Ubuntu Virtual Machine. These images where pulled from Docker Hub and where commonly used, Ubuntu images, Alpine images, Nginx images, MongoDB images and SQL images. Figure \ref{img:demo25} shows the initial output. Overall no containers failed a test but we did receive a lot of warnings, many of which where outlined already in Section \ref{sub:practical}.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.9\textwidth]{images/term25.png}
+\caption{\em Docker Benchmark Audit Tool}
+\label{img:demo25}
+\end{figure}
+
+If you note the first Warning message in Figure \ref{img:demo25}, Ensure a separate partition for containers has been created. As this tool has been inspired by the CIS Docker Comminity Edition Benchmark Guide, you can refer to the guide to find the appropriate action this can be seen in Appendix \ref{appendix:cis} in relation to our first warning.
+\newpage
+\subsubsection{Open Source Audit Tool}
+\label{sub:auditSource}
+The majority of Docker Auditing tools, including the official tool used above in Section \ref{sub:auditDocker} are Open Source. So to give some comparison we are going to take another Open Source tool, DockScan. This tool scans containers for security issues and vulnerabilities. It can be easily installed as it is written in Ruby, we can use \textit{gem install} which can be seen in Figure \ref{img:demo28}.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term28.png}
+\caption{\em Open Source Audit Tool}
+\label{img:demo28}
+\end{figure}
+
+With the tool installed we launch an NGinx container locally and begin our scan this can be seen in Figure \ref{img:demo26}. As can be seen we get a human readable output outlining an flaws or vulnerabilities. In this case we can see that many of the recommendations have already been covered throughout Section \ref{sub:practical}.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term26.png}
+\caption{\em Open Source Audit Tool}
+\label{img:demo26}
+\end{figure}
+\newpage
+\subsubsection{Container Auditing Summary}
+As mentioned previously companies are moving away from giant monolithic applications to more microservice architectures, and with that comes the need and want to rapidly roll out updates and deployments \citep{neuvector_2018}. Implementation of a CI/CD pipeline should be a starting point for checking containers for vulnerabilities.
+The examples in this Section, show two tools that can be used for auditing containers. It should be noted that these tools can be easily incorporated into a CI/CD work flow. As a good practice you should implement such tools, to insure the integrity of your containers.

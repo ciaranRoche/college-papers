@@ -1,0 +1,124 @@
+\section{Technologies}
+In order to solve the problems outlined in Section \ref{sub:problem}, the correct technologies needed to be chosen. To ensure a correct fit a number of investigations were undertaken. This fits in sync with the Agile methodology, Section \ref{sub:agile}, in that through early and often prototyping and investigation, the correct technology is chosen. The choices made resulted in a prototype application which is discussed in detail in Section \ref{sub:poc}. This section will be broken into the following sub sections, each outlining different aspects of the project and the technologies chosen which are to be implemented in the prototype: 
+\begin{itemize}
+    \item \hyperref[sub:cli_stack]{Command Line Interface}
+    \item \hyperref[sub:build_invest]{Container Build Tools}
+    \item \hyperref[sub:sdk_stack]{Software Development Kit}
+\end{itemize}
+
+\subsection{Command Line Interface}
+\label{sub:cli_stack}
+\subsubsection{Investigation}
+\label{sub:cli_inves}
+Acceptance criteria, Section \ref{sub:ac}, was set in order to ensure the correct technology was chosen for the \gls{CLI}.
+\begin{itemize}
+    \item Must be easily extensible.  
+    \item Must be modular in design.
+    \item Must appeal to developers.
+    \item Must follow patterns users are familiar with.
+    \item Must have minimal footprint.
+    \item Must meet \gls{Open-Source} criteria.
+\end{itemize}
+Based on the criteria, it was decided to go with \gls{GoLang} and the reasoning will be discussed in detail in Section \ref{sub:golang}. Other technologies looked at include, NodeJs and Python but were dismissed because, while satisfying some of the acceptance criteria I felt GoLang would increase overall uptake of the project within the Open Source Community.
+
+\subsubsection{GoLang}
+\label{sub:golang}
+\gls{GoLang}\footnote{https://golang.org -- Google engineered programming language} is an open source project developed by Google and distributed under a \gls{BSD}. \gls{GoLang} was designed to be a modern computer programming paradigms to enable higher productivity while taking aspects from a number of different languages. \gls{GoLang} is a specifically engineered language unlike others which have evolved in that the designers based characteristics of the language on what they considered to be the best elements of other modern languages. For example it is statically typed and efficient in the style of C++ and Java. It is productive and intuitive similar to that of Python or JavaScript. 
+
+Some of the main benefits include garbage collection and native concurrency while its novel type system allows for flexible and modular program construction \citep{golang}. The Stack Overflow Survey 2018 \citep{overflow_2018} continues to show signs in \gls{GoLang}'s rise in popularity between developers which can be seen in Figure \ref{img:surv_2018}. This rise could be attributed to, tools like \gls{Docker} and \gls{Kubernetes} being built in \gls{GoLang}. As these tools are \gls{Open-Source}, willing contributions to them are made in \gls{GoLang}. Utilizing the same language and libraries used to build these tools in the development of the prototype satisfies a number of the criteria set out in Section \ref{sub:cli_inves}. \gls{GoLang} appeals to developers, follows patterns users are familiar with and has a minimal footprint while meeting the \gls{Open-Source} criteria.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/a2.png}
+\caption{\em Stack Overflow Most Loved Languages -- \cite{overflow_2018}}
+\label{img:surv_2018}
+\end{figure}
+
+\gls{GoLang} features a plugin system. This allows developers build loosely coupled modular programs using packages that are compiled as shared object libraries. These libraries are then loaded and bound together dynamically at runtime \citep{vivien_2017}. By using \gls{GoLang}'s plugin system it will allow for greater extensibility in that each supported language by the tool will have its own library within the \gls{CLI} maintaining a more modular structure to the overall design.
+
+\subsection{Container Build Tools}
+\subsubsection{Investigation}
+\label{sub:build_invest}
+As of June 2015 due to the rise in popularity in container technologies, with emphasis on the rise of \gls{Docker}, the Open Container Initiative (\gls{OCI}) was born. It is the goal of the initiative to form an open standard in the Runtime Specification and the Image Specification of containers. Meaning containers could be built and run by a combination of tools and technologies \citep{oci}. 
+Just three years from the launch of \gls{OCI} a number of interoperable tools are available. To find the best fit \gls{OCI} tool for this project acceptance criteria was set for this investigation. The criteria is: 
+\begin{itemize}
+    \item Must be interoperable with technology chosen for \gls{CLI}
+    \item Must be OCI compliant
+    \item Must support Runtime Specifications for local testing
+    \item Must support Image Specifications for interoperablity with \gls{Knative}
+\end{itemize}
+Based on the criteria outlined, \gls{Docker} was chosen for the prototype and will be discussed in detail in Section \ref{sub:docker}. Other technologies looked at during this investigation have been \gls{Kata}\footnote{https://katacontainers.io -- Open Source Container building tool}, \gls{Buildah}\footnote{https://github.com/containers/buildah -- Open Source Container building tool} and \gls{Cri-O}\footnote{http://cri-o.io -- Open Source Container runtime}. However, they were not deemed suitable because of the unavailability and maturity of their \gls{API}s.
+
+\subsubsection{Docker}
+\label{sub:docker}
+\gls{Docker} is a \gls{Container} platform that controls the entire life cycle of a \gls{Container}. A \gls{Container} is a unit of software that packages up an applications code and all its dependencies and enables it to run on any computing environment with a suitable runtime. A \gls{Docker} image is an executable package which includes everything needed to run. It is not until runtime that an image becomes a \gls{Container}. This runtime can be any \gls{OCI} compliant engine \citep{docker}.
+
+\begin{figure}[!ht]
+\begin{lstlisting}
+package main
+
+import (
+	"fmt"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
+	"golang.org/x/net/context"
+)
+
+// new environment
+func main() {
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		panic(err)
+	}
+    // list all container options
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		panic(err)
+	}
+    // foll all containers, print
+	for _, container := range containers {
+		fmt.Println(container.ID)
+	}
+}
+\end{lstlisting}
+\caption{\em Docker SDK Example}
+\label{fig:doc_example}
+\end{figure}
+
+For the purpose of the prototype the focus will be on both the creation of an image and the execution of the image on the \gls{Docker} engine. This can be satisfied through the use of the \gls{Docker} \gls{GoLang} \gls{SDK}. An example can be seen in Figure \ref{fig:doc_example}, which shows the \gls{GoLang} equivalent to using the \gls{Docker} client to list all running containers within the \gls{Docker} engine.
+
+This shows that \gls{Docker} satisfies the criteria set out in Section \ref{sub:build_invest}, as it is interoperable with the chosen technology for the \gls{CLI} in Section \ref{sub:cli_stack}. Docker is also \gls{OCI} compliant and supporting both Runtime Specification and Imagine Specifications.
+
+
+\subsection{Software Development Kit}
+\label{sub:sdk_stack}
+\subsubsection{Investigation}
+\label{sub:sdk_invest}
+ It is the \gls{SDK}'s job to abstract all of the configuration away from the user and allow them to focus on the logic behind their functions. The \gls{SDK} will add the most value to the project by reducing the cost of admission to the development of \gls{Serverless} functions. Due to this fact, a great deal of consideration had to be given to choose the initial supported paradigm. As this would be the flagship \gls{SDK} to this project and will be used for the Community Launch of the project as well as demo's at a local tech talk. 
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/a3.png}
+\caption{\em Stack Overflow Most Popular Technologies --  \cite{overflow_2018}}
+\label{img:js1}
+\end{figure}
+
+The approach taking in this investigation involved looking at the most common and popular programming languages. Thus giving a greater probability in the tool being of value to users and reducing the knowledge needed to use the tool. As can be seen in Figure \ref{img:js1}, from the Stack Overflow Survey \citep{overflow_2018}, JavaScript is top of the poll. This is further backed from the \gls{GitHub} Insights Statistics 2018 \cite{octoverse_2017_2018}, viewable in Figure \ref{img:js2}, which shows a total of 2.5 million Pull Requests. Pull Requests are a method for contributing to projects on \gls{GitHub}, thus being a good indicator for usage of \gls{GoLang} through contributions.
+
+While based on the results of supporting JavaScript and supplying an SDK for JavaScript a decision was made to develop the SDK in TypeScript. The reasoning behind this decision will be discussed in Section \ref{sub:typescript}. A number of other supported languages where also chosen, these will be put into the product backlog and discussed in Section \ref{sub:sem2}. Among the other languages chosen where Python, \gls{GoLang} and Java.
+
+\begin{figure}[!h]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/a4.png}
+\caption{\em GitHub Number of Pull Requests --  \cite{octoverse_2017_2018}}
+\label{img:js2}
+\end{figure}
+
+
+\newpage
+\subsubsection{Typescript}
+\label{sub:typescript}
+TypeScript could be considered as modern JavaScript. This consideration is made as in comparison to JavaScript, TypeScript is strongly typed in that you must declare types and variables. Types can be summed up as the simplest units of data such as numbers, strings, structures and boolean values. Where as JavaScript, being dynamically typed, does not know what type a variable is until it is instantiated at run-time. This can lead to problems by false assumptions on variables, whereas with TypeScript these false assumptions can be caught during development. With added features like strict null checks, interfaces and schemas, TypeScript will overall improve the quality and usability of this project \citep{typescript}.
+
+Further backing the decision to use TypeScript is its interoperablity to JavaScript this means that JavaScript modules can be used and understood by the TypeScript compiler. It also means that TypeScript transcompiles down to JavaScript meaning that any TypeScript code can be used in a JavaScript ecosystem. This will allow for the leveraging of the community and ecosystem behind JavaScript and being able to use available modules will overall decrease development time and allow for more complex features with less overhead.
+

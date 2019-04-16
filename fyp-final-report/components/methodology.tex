@@ -1,0 +1,122 @@
+\section{Methodology}
+\label{sub:meth}
+Agile is the chosen methodology that this project followed, and in particular the Scrum variation of Agile. The main reason behind chosing Scrum was that all decisions made within the Scrum methodology are based on what is known, this will be discussed in Section \ref{sub:agile}. Scrum is also the most popular variant of Agile \citep{enterprise_2018} and is well understood by the community.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/scrum.jpg}
+\caption{\em 3 Pillars of Scrum \cite{scrumguide}}
+\label{img:scrum-pillar}
+\end{figure}
+
+\subsection{Agile}
+\label{sub:agile}
+The Agile methodology comes in many flavors and frameworks \citep{manifesto}, and those who follow an Agile methodology do so by adapting it to best suit their needs. The same approach is taken for this project in that it follows closely to the Scrum framework. The Scrum Guide defines Scrum as a "framework for developing, delivering and sustaining complex products" \citep{scrum}.
+The Scrum framework suited this project due to it being based on empiricism, which asserts that decisions are based on what is known. It employs this decision flow through an incremental approach to optimise predictability and to control risk. The Scrum framework can be broken into three pillars: transparency, inspection and adaptation.
+
+\subsubsection{Transparency}
+All aspects of a process must be visible to all who are involved and responsible for the outcome. Transparency requires these aspects to be defined so that any observers can share an understanding. I will achieve this by my Trello Cards and these reports.
+\subsubsection{Inspection}
+Scrum employs frequent inspections of Scrum artifacts, which are outlined in Section \ref{sub:sart}, and the overall progress toward a Sprint Goal to detect and identify and undesirable variances. These inspections should not be so frequent that they take away from the work but that they increase the standard and quality of the deliverables from each Sprint. The Scrum Artifacts, Section \ref{sub:sart}, will allow me achieve this.
+\subsubsection{Adaptation}
+During these inspections if it is determined that one or more aspects have deviated from the acceptable limits then the process must be adjusted. All adjustments must be made as soon as possible to minimize any further deviation. This will be achieved through the Scrum Artifacts.
+
+\subsubsection{Acceptance Criteria}
+\label{sub:ac}
+For every story in the project, Acceptance Criteria will be set. It is this criteria that will ensure requirements are met per story and will be used by myself as a Developer and my ScrumMaster to ensure work is complete.
+
+\subsubsection{Definition of Done}
+A critical aspect to Scrum is the Definition of Done. This will be a list of activities that will be used to verify that the criteria is met and the features are truly complete.
+\\ As a lone developer in a time sensitive project, being able to definitively know when I am done with a task and can move on is essential to ensure the project meets its deadline and a product is delivered. The Definition of Done for this project is defined and discussed in detail in Section \ref{sub:dod}.
+
+\newpage
+\subsection{Scrum Roles}
+Throughout this project a number of people took on a number of different roles to fit with the Scrum Methodology. Some roles have been adapted to suit this project and are outlined below.
+\begin{itemize}
+    \item \textbf{Scrum Master} - Dr. Rosanne Birney. Project supervisor Rosanne will also take the role as Scrum Master. As Scrum Master to this project Rosanne will facilitate weekly stand ups to ensure work is progressing with minimal impediments. This ensures that the project concludes with a high value product.
+    \item \textbf{Product Owners} - Dr. Leigh Griffin (Red Hat) and Laura Fitzgerald (Red Hat). Taking an adapted approach to Product Owners it is their job to guide the overall scrum team through the scrum process. In comparison to the traditional Product Owner taking an authoritative role, this authority falls to myself as Developer to this project where I retain general say.
+    \item \textbf{Developer} - Ciaran Roche. Following the traditional approach to a developer within a Scrum team. It is my job to do the work of delivering a potentially releasable product at the end of each Sprint. To that end all traditional team roles, such as front end, backend, UX will fall to me.
+    \item \textbf{Stakeholder} - Aiden Keating (Red Hat). It is the job of the stakeholder to advise decisions based on their knowledge of the technologies used. As Aiden possesses several years working within the Kubernetes ecosystem along with many open source projects, his insight and advise will be critical during the early development days prior to community involvement.
+\end{itemize}
+
+\subsection{Scrum Artifacts}
+\label{sub:sart}
+Figure \ref{img:scrum} shows artifacts as outlined in the Scrum Guide \citep{scrum} which allow for inspection and adaptation of aspects of this project and how they are incorporated around a Sprint.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.8\textwidth]{images/scrum-process.png}
+\caption{\em Scrum Process Outline \cite{scrumguide}}
+\label{img:scrum}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Sprint Planning} - There was planning sessions to evaluate the project scope and refine the backlog to best suit the needs of the project. These meetings involve the Product Owners. This meeting defined a goal for the next Sprint and looked at taking large development tasks and break them into smaller tasks and fit them to meet the overall goal for the coming Sprint.
+    \item \textbf{Sprint} - The sprint is a time boxed unit where development work is carried out on the tasks assigned during the Sprint Planning artifact. These sprints were relatively short to suit with the college semester and to allow for highly achievable goals and giving time to allow for any change. The sprints consisted of two weeks to allow enough time for a shippable increment.
+    \item \textbf{Sprint Review} - Once a sprint was over a review meeting took place and the work toward the sprint goal was evaluated. All work completed was shown in a demo to the product owners. This helped gauge progress of the project and helped with defining the next sprint during the following planning meeting. It also allowed us review the priority of the backlog.
+    \item \textbf{Sprint Retrospective} - This meeting took place following the review meeting, where it is looked at for areas that worked well and more so areas that did not work during the previous sprint. This allowed scope for improvements in sprint performance, the outcome was taken into consideration during the following planning meeting. This rapid feedback and course correction ensured the success of the project.
+\end{itemize}
+\clearpage
+\subsection{Completion and Handover}
+\label{sub:dod}
+The development for this project will have the following stipulations:
+\\The Definition of Done for each sprint will be as follows:
+\begin{itemize}
+    \item Each User Story has been tracked within JIRA.
+    \item Each User Story is implemented.
+    \item Each JIRA ticket contains a link to completed work.
+    \item A Sprint Review and Sprint Retrospective meeting has been held.
+\end{itemize}
+The project will adhere to the following Definition of Done:
+\begin{itemize}
+    \item User Stories have been categorised as MVP and Stretch Goals during initial backlog refinement.
+    \item All User Stories belong to a Theme and contain an overview story.
+    \item All code is committed to GitHub repositories belonging to Rubix Functions Github Org.
+    \item All code is accompanied by documentation
+    \item Latest image is available on Quay.io
+    \item Latest package(s) are available at chosen repository. 
+\end{itemize}
+This project required the following deliverables upon completion:
+\begin{itemize}
+    \item Presentation of the project.
+    \item Project Report.
+    \item Descriptive poster of project.
+    \item Demonstrative video of project usage.
+\end{itemize}
+
+
+
+
+
+\subsection{Continuous Integration}
+Continuous Integration is the process where work is integrated frequently, usually on a daily basis by multiple people which leads to multiple integrations per day \citep{fowler_2006}. While this project was developed by a single person it had a continuous build cycle, this ensured a high quality overall, thus reducing the number of bugs. To achieve this, integration pipelines were built for each repository associated with this project. The tools to be used will be outlined in more detail in the following sections. 
+
+Figure \ref{img:ci} shows the outline of these pipelines. When work was committed to GitHub through tool integrations with GitHub a number of checks were triggered. Circle CI, which is discussed in Section \ref{sub:circle} was responsible for building the repository and carrying out all unit tests in an isolated environment. Coveralls, which is discussed in Section \ref{sub:cover}, checked the code base for test coverage thus reducing technical debt.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/ci-cd.png}
+\caption{\em Continuous Integration Workflow}
+\label{img:ci}
+\end{figure}
+
+\subsection{Continuous Integration/Continuous Delivery}
+Due to short development sprints, producing a shippable increment every two weeks Continuous Delivery was built into the Continuous Integration allowing for the automation of releases and bug fixes.
+
+\subsection{Testing Approach}
+Behavior Driven Development (BDD) was chosen for the approach to be followed for this project as Behavior Driven Development is the combination of Test Driven Development, domain-driven design and object-oriented analysis. 
+\\BDD is a set of practices that aim to reduce common wasteful activities in software development, such as rework needed due to misunderstood or vague requirements, or technical debt due to reluctance to refactor code. It achieves this by using a natural language to express desired behaviors and expected outcomes, based on these constructs test scripts are written and implemented into a CI/CD workflow \citep{solis_wang}. The result is a closer relationship to the acceptance criteria set at the user story level, thus BDD aligns closely with the chosen Agile Methodology which, was discussed in Section \ref{sub:agile}. 
+\\Upon completion of the POC discussed in Section \ref{sub:poc}, constructs will be written outlining all expected and desired behaviors. These constructs will be used throughout the project to drive the development and tests to be written.
+
+\subsection{Open Source}
+To ensure the project followed the Open Standards Requirement for Software set by the Open Source Initiative. In order to comply with the requirement and ensure that the project is legally Open Source, a number of criteria where met \citep{initiative_2018}.
+\begin{itemize}
+    \item \textbf{No Intentional Secrets} - The project must not withhold any detail that is necessary for interoperable implementation. No versions of the project can be released if in violation to the OSR
+    \item \textbf{Availability} - The project must be freely and publicly available under royalty-free terms.
+    \item \textbf{Patents} - All patents associated with the project must be licensed under royalty-free terms for unrestricted use or be covered by a promise of non-assertion when practiced by open source software.
+    \item \textbf{No Agreements} - There must not be any requirement for execution of a license agreement.
+    \item \textbf{No OSR-Incompatible Dependencies} - Implementation of the standard must not require any other technology that fails to meet the criteria of this requirement.
+\end{itemize}
+A number of User Stories were defined around complying with the standard and creating the foundation for an Open Source community. These can be seen in Section \ref{sub:community}. 
+
+
+
+

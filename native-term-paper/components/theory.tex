@@ -1,0 +1,96 @@
+\section{Theory}
+This section will look to answer a number of questions so that we can gain a greater understanding of what Knative is and how it aids a developer working with Kubernetes. It should also be noted that since this technology is only a year old, at time of writing this paper, the amount of resources on Knative are limited, so with that I have decided to list the resources I used during research of this term paper in an Appendix, over using a Bibliography, while answering the questions below based on my findings and what I have learned from my time working with Knative.
+\subsection{What is Knative?}
+As mentioned above Knative is a new project in the Kubernetes landscape, it is an open source platform that is being developed by engineers from Google, IBM, Red Hat, SAP and many other major players.
+\\Knative follows a mantra \textit{"boring but difficult"}, in that the frame work is a solution to the boring and difficult aspects to modern application development. So if we refer to Appendix \ref{appendix:gck} we can clearly see this mantra littered across the frame works's promotional website. 
+\\It tells us that Knative is a set of middleware components that are essential to building modern applications. In a sense it abstracts the \textit{"boring"} bits from the developer, freeing them to focus their energy on writing the business logic for their application. If we dig a little deeper we can get a number of examples of these \textit{"boring"} bits, such as orchestrating source-to-container workflows, routing and managing traffic during deployment, auto-scaling the workloads and also binding running services to eventing ecosystems. All this while being interoperable with many idioms, languages and frameworks. 
+\\To avoid this becoming very sales-pitchy, we shall dive a bit deeper and break down the components that make up Knative.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/knative-overview.png}
+\caption{\em Knative Overview}
+\label{img:knative-overview}
+\end{figure}
+\\If we refer to Figure \ref{img:knative-overview}, it paints a clear picture of what Knative is and how it looks. It is essentially a platform that sits on top of Kubernetes and brings the capabilities  of serverless workloads to Kubernetes. It is made up of a number of utilities, that try to make working with cloud native apps feel, native. These utilities/components, or as they are referred to in the documentation, Knative Primitaves, are as follows -- Build, Serve and Event
+
+\subsubsection{Build}
+Figure \ref{img:knative-build} tries to paint a picture of the process in which we would go through in deploying our code in Kubernetes. As we can see we start out with our code for the application, which can be hosted on GitHub or some other repository. Our next step is to take our code and turn it into an image, something in which Kubernetes, Docker or what ever container runtime we wish to use can recognise. This is often a simple Docker Build, but for more complex application a number of different steps may be needed. The end result will always be the same in that we take our code and turn it into a image. Once we have built our image the next step is to push this image to the cloud, so that it is accessable, in a repository or hub of our choice. The final step which we need is a manifest yaml file so that we can deploy our image to Kubernetes. In some cases these yaml files can stretch far beyond a single file depending on the complexity of the application.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.5\textwidth]{images/knative-build.png}
+\caption{\em Knative Build}
+\label{img:knative-build}
+\end{figure}
+\\Looking at the steps above, and if we accept the fact we are working in an iterative process, pushing and deploying changes regularly, the whole process can become quite tedious. This is where Knative Build comes in. It takes the entire process and brings it directly into our Kubernetes Cluster, handling the source code management. As well as custom , complex or standard builds. Or if we prefer we can use templates. An example of a template would be Cloud Foundry Build Packs. Diving into build packs is out of the scope of this paper but to give a high level view understanding, they basically examine our application to determine what dependencies are needed and the auto configure the app to communicate with bound services. On push to Cloud Foundry a build pack is applied, the app compiled and ready for launch.
+\\Knative takes all these steps, and automates them through a single manifest file deploy, this makes it a lot easier and I guess more agile, bringing faster development times by abstracting away the steps needed to bring our code from source to deployment within out cluster.
+\\It is also worth nothing that this component is a work-in-progress, as of writing this report, Knative build does not provide a complete standalone CI/CD solution. What it does provide is a lower-level building block that is designed to enable integration and utilization into larger systems.
+\\Under the hood, Knative build is a custom resource. It is here that we can define a process and run it to completion. For example, our custom resource can fetch, build and package our code and respond back if the process has succeeded. All this runs on-cluster and implemented by a Kubernetes Custom Resource Definition.
+\\Like Build Packs, Kubernetes Custom Resource Definitions (CRD) are out of scope to this term paper, but a high level understanding of a CRD is an extension to the Kubernetes API that is not available in a default Kubernetes installation. We are able to spin up and tear down CRD's through dynamic registration within our clusters and we can interact with CRD's as we do with a regular Pod through kubectl.
+\subsubsection{Serve}
+The serve component to Knative comes with Istio components built in. Istio will be discussed in Section \ref{sub:istio}. So if we look at Figure \ref{img:knative-serve}, we get a snapshot of an average serve looks like. Serve deals with our service or application which we want to deploy in our cluster. This can be a traditional micro service or a simple function. The service is then pointing to two different things -- a route and a config.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.5\textwidth]{images/knative-serve.png}
+\caption{\em Knative Serve}
+\label{img:knative-serve}
+\end{figure}
+\\Now one of the cool aspects to serve is when we do a push of our service to our cluster, our config within the serve stores that version. So if we refer back to Figure \ref{img:knative-serve} we can see we have two different versions of our service served to our cluster. These two versions are managed by the config. 
+\\Route on the other hand manages the traffic to our service, and we can route traffic to one or more of our version stored under the config. This is utilized by the Istio traffic management capabilities. So if we look at Figure \ref{img:knative-serve} we can see we have 10\% of our traffic directed to version 2 and the rest being forwarded to version 1. This allows for simple staged roll outs of services, or even AB/Canary testing. AB testing is a method that shows a small number of our users a newer version of the service, this allows us to see if the latest version of the service has a positive impact on UX.
+\\Lets break down the resources that make up a serving within Knative. Like the build, Knative handles a serving as a Kubernetes Custom Resource Definition. The service is the workhorse and manages the whole lifecycle of our application. It handles the creation of other objects to ensure that the app has a route and a configuration along with a new revision for the latest version or update of the service. 
+\\The route resource maps a network endpoint to one or more revisions. By utilizing Istio the route can manage the traffic in several ways, for instance fractional traffic and named routes.
+\\The configuration resource maintains the desired state of our application. It provides a separation between our code and our configuration. Any modification to the code and configuration results in a new revision number. 
+\\The revision resource is a snapshot of our applications code and configuration. These revisions are immutable objects and can be retained for as long as we need.
+
+\subsubsection{Event}
+So before we begin on eventing it is worth noting that this is a heavy work in progress but they are a number of capabilities which we will discuss below. So I feel it best to start with an example scenario to try paint a picture of the type of use case in which eventing could be used. So eventing in my opinion is the bread and butter of any serverless platform, in that you want to create some sort event which will trigger a serverless function. So lets take for example if you have a webhook on your GitHub repo, and you want to trigger a service which in turn will execute a Knative Build on your latest code. This can be handled through either the use of triggers within in Knative Eventing or else through a pipeline configured with Knative Eventing.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/knative-eventing.png}
+\caption{\em Knative Data Plane Forward Eventing}
+\label{img:knative-event1}
+\end{figure}
+\\Figure \ref{img:knative-event1} shows the above example of a Knative Data Plane Forward Event. If we break it down the GitHub repo is outside the pod boundary. The channel receiver is accepting CloudEvents over HTTP POST, feeding it to a Kafka pipeline which is a protocol specific implementation for our services.
+\\The objecs that make up a Knative Event are -- consumers, channels and subscriptions, and finally sources.
+\\\textbf{Event Consumers}
+\\We can think of consumers as our services into which we want events to trigger. To allow for the delivery to our services Knative defines two generic interfaces. These interfaces are implemented as a Kubernetes resource. The first being \textit{addressable} -- these objects are able to receive and acknowledge an event delivered over HTTP to an address defined in their hostname field. The second interface is \textit{callable} -- which are objects that are able to receive an event delivered over HTTP and transform the event, and returning either 0 or 1 new events in the HTTP response. These responses can be further processed in the same way that the original event from the external source is processed.
+\\\textbf{Event Channels and Subscriptions}
+\\We can define a single event forwarding and persistence layer. This is known as a Channel within Knative eventing. These events are forwarded to our services or to other channels using subscriptions. This allows message delivery in our cluster to vary based on our requirements. To put into other words we can handle some events by an in-memory implementation, event channels and subscriptions, or we can be persisted an use a stream processing software such as Kafka.
+\\\textbf{Event Sources}
+\\We can think of a source as the creation of an event, each source is a separate Kubernetes custom resource. Which allows us to define the arguments and parameters needed to instantiate it. It seems to be common practice to define a source type in golang format but they can also be expressed in lists, such as YAML or JSON.
+
+\subsection{Who is Knative designed for?}
+The Kubernetes landscape has a varied audience, in that it is littered with people from end users to developers and everyone in between. So who is Knative aimed for?
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/knative-audience.png}
+\caption{\em Knative Audience}
+\label{img:knative-audience}
+\end{figure}
+\\\textbf{Developers} -- have the ability to deploy serverless-style functions, applications and containers to an auto-scaling runtime through Knative's components which act as Kubernetes-native API's
+\\\textbf{Operators} -- Knative components are intended to be integrated into more polished products. It is with this operators can begin to combine the power of Knative primitives and their existing cloud service providers.
+\\\textbf{Contributors} -- As Knative is an Open Source Project, it has a clear project scope which allows for an efficient contributor workflow.
+
+\subsection{Where can Knative be deployed?}
+The only dependency that is required to deploy Knative is a Kubernetes cluster. This gives us the freedom to choose the right solution to fit our use case. We have the ability to choose one of the many hosted Kubernetes services available or to even run locally within MiniKube. For this term paper we look a using MiniKube, Google Kubernetes Engine and Amazons EKS. The results can be found in Section \ref{sub:instk}.
+\clearpage
+
+\subsection{What is Istio?}
+\label{sub:istio}
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/istio.png}
+\caption{\em Istio Overview}
+\label{img:istio}
+\end{figure}
+Istio is an open platform independent service mesh, that gives us traffic management, policy enforcement and telemetry collection. So what is a service mesh? If we put it simply it is a network of micro services, and in terms of serverless, we can accept serverless is an extreme case of micro services. If we refer to Figure \ref{img:istio}, a service mesh gives Service A the ability to contact Service B, along with giving us routes to each service. As the number of these services grow, so does the complexity of the mesh. This is where Istio comes it, it gives us a way to control connections to Services. 
+\\If we have a look at the features of Istio, right away we get out of the box a load balancer, this allows us make connections via the likes of HTTP, TCP and websockets between services as well as bringing traffic from outside the mesh in. The next feature is fine grain control, this allows us to implement rules within our mesh. Giving us the likes of fail overs when a service drops. We also get access control, similar to the fine grain control, but here we enforce the policies which we can set for our application are correct. Finally we get visibility, this gives us logging, stats, graphing and metrics of our mesh.
+\\We get all these features for free from using Istio. Now if we go back to Figure \ref{img:istio} we can have a look at the components of Istio. We can see Istio is made up of -- Pilot, Mixer and Citadel. The pilot is the driver of our service mesh, it has the AB testing, it can control the likes of canary deployments. The pilot has the intelligence of how our mesh works. The citadel on the other hand is the security aspect to our service mesh, under the hood it contains a certificate authority. We can route traffic through citadel to ensure traffic within our mesh is encrypted if needs be. This is extremely valuable if we want to extend our Kubernetes cluster to multiple clusters and we extend our service mesh across these clusters, being able to ensure all traffic is encrypted is quite usefull. Finally the mixer is the central point to Istio, it is where the services and the sidecars, along with the Istio components come together. On a side note if we refer to Figure \ref{img:sidecar} we can get an understanding of what a sidecar is in terms of microservices. We can deploy components of an application or a service into a separate process or container to provide better isolation and encapsulation. It is refered to as Sidecar as it resembles a sidecar attached to a motorcycle. It is worth noting that a sidecar shares the same lifecycle as its parent service. Back to the mixer and it is here the telemetry from our mesh is built which enables the pilot to build the metrics and produce the graphing of our mesh. The mixer is also plug-able which allows us to build our own components to help manage and control our service mesh. 
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/sidecarxml.png}
+\caption{\em Sidecar Overview}
+\label{img:sidecar}
+\end{figure}
+
+So where does Istio fit into Knative, well taking the features mentioned above which we get out of the box from Istio, the likes of traffic management, auto routing and scaling it allows us to abstract these features and wrap them up within our Knative deployments. But something which I find really cool, is Istio gives us the ability to scale to zero. Now this concept allows us to deploy serverless applications within a Kubernetes cluster. So for example if our service is under heavy load we can scale up to as many pods as required, but when no one is accessing that service we can scale back to zero pods.

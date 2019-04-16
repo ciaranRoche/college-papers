@@ -1,0 +1,548 @@
+\section{Practical}
+Now with a greater understanding of what Knative is and how it works, we can get our hands dirty with the framework, furthering our exposure to Knative. We will go through many steps and examples from choosing the right Kubernetes hosting to deploying a Knative app. All which leads to our final product which will be a web application with a serverless backend all deployed to Knative.
+
+\subsection{Picking the Right Solution}
+We are able to run Kubernetes on various platforms, from laptops to bare metal servers and everything inbetween. It was decided to explore Knative on 3 platforms -- Minikube, Amazons Elastic Container Service for Kubernetes and Google Kubernetes Engine. Minikube is method for creating a local, single node Kuberneters cluster, designed for local development and testing. Amazons EKS is a managed Kubernetes service, as is Googles Kubernetes Engine.
+\\The steps I followed to instantiate Knative where taking from the Knative documentation found at Appendix \ref{appendix:docs}. My first port of call was running Knative within Minikube. I run Minikube as a virtual machine locally using virtual box. When trying to provision Istio, the documentation warn it takes some time, I was finding some of my pods where failing. When I inspected the logs of the failing pods I noticed that I was running into memory issues. This left me puzzeled as on launching MiniKube you pass parameters to increase the amount of memory. After several attempts I kept running into the same error. It turned out virtual box was limiting the resources it was passing to the VM, so from this I bumped my configuration within virtual box. On running MiniKube again I was able to provision all Istio pods, when I applied the Knative manifest to provision the Knative pods my laptop ran out of memory and essentially was rendered useless as I lost control to my laptop. This left me no choice but to look at a hosted managed service.
+\\Here I decided it best to stick with what I was familiar with and try Amazon EKS. Now this left me with no official Knative documentation only the generic how to install Knative on a Kubernetes cluster. So throwing caution to the wind I dived into the Amazon documentation and began provisioning a Kubernetes cluster. The first, I guess road block which I ran into was the documentation, I found them not as descriptive as they needed to be and also to be written, like so many other docs out there, with an assumed understanding of the technology. Despite this I was able to provision a cluster, unfortunately the provisioning time was quite long, over 20 minutes. Now with my cluster provisioned I had to configure my kubectl to be able to communicate with my cluster. Again documentation here was a hurdle I had to overcome, and after some heavy googling I finally have kubectl configured. Now being able to talk to my cluster I began installing Knative, and once again I ran into memory issues. My own fault, so I had to tear everything down and re-provision a cluster this time allocating greater resources to it. This time around the time it took to provision was around 30 minutes. Finally I had successfully installed Knative on my cluster. Deployed a hello world app and everything seemed to work.
+\\While retrospectively looking back at the process of how I got to being able to deploy an app on my cluster I felt the wait time to provision a cluster was too long, as these clusters can be expensive to run I need a solution I can spin up quick and easy as well as tear it down when I don't need it. So from this I decided to explore Google Cloud and their Kubernetes Engine. As GKE is around longer then EKS I felt there might be some improvement here, along with having access to Knative official documentation for running Knative on GKE. Provisioning time was under 10 minutes, and with the Google Cloud SDK being able to sync with kubectl there was no need for configuration here. 
+\\Taking into account the provisioning times, the documentation and the support available I decided to opt for using GKE for the rest of this term paper along with other work which I am carrying out for my final year project. In the following Section, I will document the steps needed to install Knative on GKE. 
+
+\subsection{Installing Knative}
+\label{sub:instk}
+The following section will result in a Knative deployment on GKE
+\\Knative requires a Kubernetes cluster v1.11 or newer. `kubectl` v1.10 is also
+required. This section will walks us through creating a cluster with the correct
+specifications for Knative on Google Cloud Platform (GCP).
+
+\subsubsection{Installing the Google Cloud SDK and `kubectl`}
+We need to have `gcloud` installed with `kubectl` version 1.10 or newer To check the version of `kubectl` we have installed, enter:
+\begin{lstlisting}[language=bash]
+  $  kubectl version
+\end{lstlisting}
+We need to download and install the `gcloud` command line tool which can be done from the following link:
+\begin{lstlisting}[language=bash]
+  https://cloud.google.com/sdk/install
+\end{lstlisting}
+With gcloud installed we will need to install kubectl, this can be done as follows:
+\begin{lstlisting}[language=bash]
+  gcloud components install kubectl
+\end{lstlisting}
+Now that kubectl is installed we need to authorize our gcloud:
+\begin{lstlisting}[language=bash]
+  $ gcloud auth login
+\end{lstlisting}
+
+\subsubsection{Setting environment variables}
+To simplify the commands, we can define a few environment variables. We need to set `CLUSTER\_NAME` and `CLUSTER\_ZONE` variables to our preference for our deployment. It should be noted that the `CLUSTER\_NAME` needs to be lowercase and unique among any other Kubernetes clusters in our GCP project. The zone can be any compute zone available on GCP. These variables are used later to create a Kubernetes cluster.
+
+\begin{lstlisting}[language=bash]
+  $ export CLUSTER_NAME=knative
+  $ export CLUSTER_ZONE=europe-west2-a
+\end{lstlisting}
+
+\subsubsection{Setting up a Google Cloud Platform project}
+We need to have a Google Cloud Platform (GCP) project to create a Google Kubernetes
+Engine cluster. First we will set a `PROJECT` environment variable
+\begin{lstlisting}[language=bash]
+  $  export PROJECT=r3x-knative-project
+\end{lstlisting}
+Now we can create a project:
+\begin{lstlisting}[language=bash]
+  $  gcloud projects create $PROJECT --set-as-default
+\end{lstlisting}
+It should be noted that billing has to be enabled on new projects. GCP locks new projects till you give permission to be billed. With our new project created we need to enable the necessagy APIs which we will use.
+\begin{lstlisting}[language=bash]
+  $  gcloud services enable \
+     cloudapis.googleapis.com \
+     container.googleapis.com \
+     containerregistry.googleapis.com
+\end{lstlisting}
+
+\subsubsection{Creating a Kubernetes cluster}
+To make sure our cluster is large enough to host all the Knative and Istio
+components, the recommended configuration for a cluster is:
+\begin{itemize}
+    \item Kubernetes version 1.11 or later.
+    \item 4 vCPU nodes (`n1-standard-4`).
+    \item Node autoscaling, up to 10 nodes.
+    \item API scopes for `cloud-platform`, `logging-write`, `monitoring-write`, and
+  `pubsub`.
+\end{itemize}
+To create a Kubernetes cluster on GKE with the required specifications we use the following command:
+\begin{lstlisting}[language=bash]
+  $  gcloud container clusters create $CLUSTER_NAME \
+     --zone=$CLUSTER_ZONE \
+     --cluster-version=latest \
+     --machine-type=n1-standard-4 \
+     --enable-autoscaling --min-nodes=1 --max-nodes=10 \
+     --enable-autorepair \
+     --scopes=service-control,service-management,compute-rw,storage-ro,cloud-platform,logging-write,monitoring-write,pubsub,datastore \
+     --num-nodes=3
+\end{lstlisting}
+We need to grant cluster-admin permissions to our current user:
+\begin{lstlisting}[language=bash]
+  $  kubectl create clusterrolebinding cluster-admin-binding \
+   --clusterrole=cluster-admin \
+   --user=$(gcloud config get-value core/account)
+\end{lstlisting}
+  
+\subsubsection{Installing Istio}
+As we discussed earlier Knative depends on Istio. To install Istio on our cluster we use the following command:
+\begin{lstlisting}[language=bash]
+  $  kubectl apply --filename https://github.com/knative/serving/releases/download/v0.3.0/istio-crds.yaml && \
+   kubectl apply --filename https://github.com/knative/serving/releases/download/v0.3.0/istio.yaml
+\end{lstlisting}
+It goes without saying, we dont just install a random file from the internet onto our cluster, so we need to have a look at those files before running the command. It should also be noted that the resources (CRDs) defined in the `istio-crds.yaml` file are also included in the `istio.yaml` file, but they are pulled out so that the CRD definitions are created first. Some times this throws an error when creating resources about an unknown type, in that case we need to run the second `kubectl apply` command again.
+\\We now need to label the default namespace with `istio-injection=enabled`:
+\begin{lstlisting}[language=bash]
+  $   kubectl label namespace default istio-injection=enabled
+\end{lstlisting}
+This can take a few minutes to provision all the pods, we can use the following command to monitor the pods progress:
+\begin{lstlisting}[language=bash]
+  $   kubectl get pods --namespace istio-system --watch
+\end{lstlisting}
+
+\subsubsection{Installing Knative}
+
+The following commands install all available Knative components as well as the
+standard set of observability plugins. To install Knative and its dependencies we must run:
+\begin{lstlisting}[language=bash]
+  $   kubectl apply --filename https://github.com/knative/serving/releases/download/v0.3.0/serving.yaml \
+    --filename https://github.com/knative/build/releases/download/v0.3.0/release.yaml \
+    --filename https://github.com/knative/eventing/releases/download/v0.3.0/release.yaml \
+    --filename https://github.com/knative/eventing-sources/releases/download/v0.3.0/release.yaml \
+    --filename https://github.com/knative/serving/releases/download/v0.3.0/monitoring.yaml
+\end{lstlisting}
+Like before this can take a few minutes to provision so to monitior the progress we can run the following:
+\begin{lstlisting}[language=bash]
+  $   kubectl get pods --namespace knative-serving
+  $   kubectl get pods --namespace knative-build
+  $   kubectl get pods --namespace knative-eventing
+  $   kubectl get pods --namespace knative-sources
+  $   kubectl get pods --namespace knative-monitoring
+\end{lstlisting}
+And that is it, we have now provisioned Knative in a Kubernetes cluster running within GKE.
+
+\subsubsection{Cleaning up}
+As we know running instances in the cloud costs money, so to tear down our cluster we must run:
+\begin{lstlisting}[language=bash]
+  $   gcloud container clusters delete $CLUSTER_NAME --zone $CLUSTER_ZONE
+\end{lstlisting}
+Deleting the cluster will also remove Knative, Istio, and any apps we have deployed.
+
+\subsection{Deploying an App}
+For this section I will be following on from Section \ref{sub:instk} with a cluster running in GKE. I will also be using my FYP to create example functions, for brevity I not go into to much detail on my FYP or how to install it, but a link to the documentation can be found in Appendix \ref{appendix:r3x}.
+
+Serverless development requires a different mindset, this is something Lambda does extremely well, you write your logic, click a button and you have a Serverless function. Coming from a Kubernetes mindset, mixed with working with Knaitve which feels native to Kubernetes it can be tricky to get into the Serverless mindset. When we break down what a Serverless Pod in Kubernetes looks like, we have our business logic, wrapped in a http server, which is wrapped in an image, which then requires a Knative Manifest to be deployed. With lots of moving parts and plenty of noise, one of the main benefits of Serverless is lost. So with that my FYP (RubiX) does all the heavy lifting allowing us to just write our business logic. This section will go through these steps.
+
+First we need to initalise a function, RubiX will bootstrap our function, providing all the config needed, but what we need to focus on is the r3x func file. Here we will have a preconfigured file in the chosen language, for this term paper it will be JavaScript. So in our r3x-func.js we write our business logic, which is then consumed by the RubiX SDK. To initialise a project run the following:
+
+\begin{lstlisting}[language=bash]
+  $   r3x init <<our function name>> --type js
+\end{lstlisting}
+If we dive into the r3x-func.js file we can see our hello world program where we are looking for an environment variable and basically returning some JSON. 
+\begin{lstlisting}[language=bash]
+  r3x.execute(function(){
+	const target = process.env.TARGET || 'RubiX';
+	let response = {'message' : `Hello ${target}!`}
+	return response 
+})
+\end{lstlisting}
+With our function wrote we need it in a state where Knative can use it, this requires it to be turned into an image, pushed somewhere it can be accessed from and a manifest file which will be consumed by Knative. The RubiX build function will handle all this for us. Simply run the following
+\begin{lstlisting}[language=bash]
+  $   r3x build --push --name <<docker hub user name>>
+\end{lstlisting}
+\clearpage
+If we check back into our project we will see a service.yaml file has be generated:
+\begin{lstlisting}[language=bash]
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: r3x-<<our function name>>
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: docker.io/<<docker hub user name>>/r3x-<<our function name>>
+\end{lstlisting}
+Now we need to add an environment variable to our manifest, this is done in the same way we would with any Kubernetes service. It is also worth mentioning here, Knative treats our pods as services, there is no need to create deployments, a simple service file is all that is needed. With the environement variable added, our manifest should look like this:
+\begin{lstlisting}[language=bash]
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: r3x-<<our function name>>
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: docker.io/<<docker hub user name>>/r3x-<<our function name>>
+            env:
+            - name: TARGET
+              value: "RubiX Sample v1"
+\end{lstlisting}
+And that is it, to deploy it to our cluster simply run the following:
+\begin{lstlisting}[language=bash]
+  $   kubectl apply --filename service.yaml
+\end{lstlisting}
+What I like to do next is, Knative will instantly spin up 3 pods for our function. This is so Knative can assign a revision number to our latest deployment of the function along with assign it a custom domain name within our cluster and configure the routing. So while this is happening I run the following:
+\begin{lstlisting}[language=bash]
+  $   kubectl get pods --watch
+\end{lstlisting}
+Here we can watch till our pod its status is running. Once done we need to find out our functions domain and the IP address of our cluster gateway. First we will get our cluster IP, to make subsequent calls to our gateway easier we will declare the following variable:
+\begin{lstlisting}[language=bash]
+$ export INGRESSGATEWAY=istio-ingressgateway
+\end{lstlisting}
+Next we can run the following:
+\begin{lstlisting}[language=bash]
+$ kubectl get svc $INGRESSGATEWAY --namespace istio-system
+\end{lstlisting}
+Which will return something similar to:
+\begin{lstlisting}[language=bash]
+NAME                     TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                                      AGE
+istio-ingressgateway   LoadBalancer   10.7.241.67   35.246.108.94  80:31380/TCP,443:31390/TCP,31400:31400/TCP,15011:30271/TCP,8060:31049/TCP,853:32614/TCP,15030:30885/TCP,15031:32329/TCP   55m
+\end{lstlisting}
+What we are interested in is the External-IP which in this case is 35.246.108.94
+\begin{lstlisting}[language=bash]
+$ kubectl get ksvc r3x-<<our function name>>   --output=custom-columns=NAME:.metadata.name,DOMAIN:.status.domain
+\end{lstlisting}
+Which will return something similar to:
+\begin{lstlisting}[language=bash]
+NAME                DOMAIN
+r3x-hello-knative   r3x-hello-knative.default.example.com
+\end{lstlisting}
+We now have all the pieces to our puzzle, and we can curl our function. It is worth opening another terminal and running the pod watch command, here we will see that Knative has terminated our pod since we deployed it, after 3 minutes of no access to the pod it gets scaled back to 0. 
+\begin{lstlisting}[language=bash]
+$ curl -H "Host: r3x-hello-knative.default.example.com" http://35.246.108.94
+Hello RubiX Sample v1!
+\end{lstlisting}
+Watching the pods we will see our pods spin up and our response returned. Now the latency is notable, in some cases it can be around 5 seconds, but once the pod is running subsequent calls to the pod will return in milliseconds.
+\\Thats it we have now spun up a Knative Kubernetes cluster on GKE and deployed our first function, in the next Section we will look at revisions, updating and autoscaling our function.
+
+\subsection{Updating and AutoScaling an App}
+For this section, I recommend opening 4 terminal windows, we will use one to interact with our cluster, in the second terminal we will want to watch our deployments, we can do this with the following command:
+\begin{lstlisting}[language=bash]
+$ kubectl get deployments --watch
+\end{lstlisting}
+We also want to watch our pods, this can be done with the following:
+\begin{lstlisting}[language=bash]
+$ kubectl get pods --watch
+\end{lstlisting}
+Finally we want to poll our function with requests by entering this simple loop, just change the IP address to suit:
+\begin{lstlisting}[language=bash]
+$ while true; do curl --header "Host: r3x-hello-knative.default.example.com" http://35.246.108.94;done
+
+{"message":"Hello RubiX Sample v1!"}
+\end{lstlisting}
+We should see from the output v1, now we are going to make a simple change to show a basic rollout to an update, we will make a small change to our service yaml, by incrementing our environment variable.
+\begin{lstlisting}[language=bash]
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: r3x-hello-knative
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: docker.io/muldoon/r3x-hello-knative
+            env:
+            - name: TARGET
+              value: "RubiX Sample v2"
+\end{lstlisting}
+Now all we need to do is run:
+\begin{lstlisting}[language=bash]
+$ kubectl apply --filename service.yaml
+\end{lstlisting}
+We should see a new deployment created, along with new pods being created, once they get up and running our existing pods will be terminated. We should also see v2 in the output from our polling script. So lets step up this example and bring in some autoscaling policies to our updates.
+\\ So now our updated service.yaml should resemble something like this:
+\begin{lstlisting}[language=bash]
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: r3x-hello-knative
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        metadata:
+          annotations:
+            # Target 10 in-flight-requests per pod.
+            autoscaling.knative.dev/target: "10"
+        spec:
+          container:
+            image: docker.io/muldoon/r3x-hello-knative
+            env:
+            - name: TARGET
+              value: "RubiX Sample v2"
+\end{lstlisting}
+As can be seen, we have added metadata to our revisionTemplate, and we are setting our autoscaling policy target to 10, this will be triggered by 10 requested per pod. In order to test out autoscaling policy we are going to use a tool called Hey, which can be found at Appendix \ref{appendix:hey}. To quickly install hey, assuming you have GO installed locally you can just run :
+\begin{lstlisting}[language=bash]
+$ go get -u github.com/rakyll/hey
+\end{lstlisting}
+With hey installed we are going to apply our latest service manifest and poll it. Be sure to change the host to suit. What hey will do, is send 30 seconds of traffic maintaining 50 in-flight requests.
+\begin{lstlisting}[language=bash]
+$ kubectl apply -f service.yaml
+$ hey -z 30s -c 50 \
+  -host "r3x-hello-knative.default.example.com" \
+  "http://${IP_ADDRESS?}?sleep=100&prime=10000&bloat=5" \
+  && kubectl get pods
+\end{lstlisting}
+After 30 seconds we will get some output, but on the subsequent get pods we will notice that we did not scale up beyond 3 pods. I initially put this down to Kubernetes handling the traffic with ease as it is essentially a hello world program. After a quick visit to Stackover flow I got a function for calculating prime numbers, now my new functions looks like this
+\begin{lstlisting}[language=bash]
+"use strict";
+const r3x = require('@rubixfunctions/r3x-js-sdk')
+
+var primes = [];
+
+r3x.execute(function(){
+	return findPrimes(10000000)
+})
+...
+\end{lstlisting}
+We will calculate and return the number of prime numbers in 10 million. Anything more then 10 million I was over flowing a javascript heap. We now run an r3x build, and reapply our service manifest. We will see our latest version roll out. Before running the hey command again I decided to tweak our load balancer to make testing a little easier.
+\begin{lstlisting}[language=bash]
+$ kubectl patch configmap config-autoscaler \
+	--namespace=knative-serving \
+	--patch '{"data":{"container-concurrency-target-default":"10"}}'
+$ kubectl patch configmap config-autoscaler \
+	--namespace=knative-serving \
+	--patch '{"data":{"scale-to-zero-threshold":"1m"}}'
+$ kubectl patch configmap config-autoscaler \
+	--namespace=knative-serving \
+	--patch '{"data":{"scale-to-zero-grace-period":"30s"}}'
+\end{lstlisting}
+So what we have done here is set the desired container concurrency number to 10 from 100 which is standard, we reduced the scale back to zero from 3 minutes to 1 minute, and set a grace period of 30 seconds on the threshold. Now when we run the hey command we get the following output
+\begin{lstlisting}[language=bash]
+Summary:
+  Total:	33.7802 secs
+  Slowest:	16.2597 secs
+  Fastest:	0.0946 secs
+  Average:	1.5252 secs
+  Requests/sec:	30.6392
+
+
+Response time histogram:
+  0.095 [1]	|
+  1.711 [761]	|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  3.328 [42]	|■■
+  4.944 [163]	|■■■■■■■■■
+  6.561 [17]	|■
+  8.177 [24]	|■
+  9.794 [8]	|
+  11.410 [2]	|
+  13.027 [2]	|
+  14.643 [0]	|
+  16.260 [15]	|■
+
+
+Latency distribution:
+  10% in 0.1146 secs
+  25% in 0.1709 secs
+  50% in 0.2784 secs
+  75% in 2.8774 secs
+  90% in 4.1180 secs
+  95% in 6.5950 secs
+  99% in 15.3213 secs
+
+Details (average, fastest, slowest):
+  DNS+dialup:	0.0011 secs, 0.0946 secs, 16.2597 secs
+  DNS-lookup:	0.0000 secs, 0.0000 secs, 0.0000 secs
+  req write:	0.0001 secs, 0.0000 secs, 0.0043 secs
+  resp wait:	1.5229 secs, 0.0943 secs, 16.2193 secs
+  resp read:	0.0006 secs, 0.0000 secs, 0.0968 secs
+
+Status code distribution:
+  [200]	1035 responses
+
+
+
+NAME                                                  READY     STATUS    RESTARTS   AGE
+r3x-hello-knative-wdtqr-deployment-54f896d4fc-89tn8   3/3       Running   0          <invalid>
+r3x-hello-knative-wdtqr-deployment-54f896d4fc-fpg5l   3/3       Running   0          <invalid>
+r3x-hello-knative-wdtqr-deployment-54f896d4fc-mcdjr   3/3       Running   0          <invalid>
+r3x-hello-knative-wdtqr-deployment-54f896d4fc-vp2hr   3/3       Running   0          <invalid>
+r3x-hello-knative-wdtqr-deployment-54f896d4fc-w27h7   3/3       Running   0          <invalid>
+\end{lstlisting}
+With some basic math we can break down what happened here. We sent 50 concurrent requests which meant the autoscaler created 5 pods, 50 requests / target 10 = 5 pods. Its actually really cool under the hood, the autoscaler is calculating the average concurrency over a 60 second window, so every 60 seconds the autoscaler stabilizes, but if it comes under heavy load it will trigger a 6 second panic window. If the target concurrency is doubled in 6 seconds the autoscaler goes into panic mode and will handle the load, once the panic conditions are no longer met for 60 seconds the autoscaler then returns to the initial 60 second stable window.
+\\A really cool feature Knative does is allow for AB deployments through revisions. Following the documentation to demonstrate this, I ran into problems. I reached out to the Knative community and I was told that currently what I am trying to do is not supported as it conflicts with other operations. 
+\\Lets break down what I am trying to do, if we remember how the Knative Serve is made up of a config and a route, the config holds revisions of each deploy we do of a specific service. The route then forwards traffic to these revisions. So we can actually declare a percentageRollout to which traffic is routed across revisions. The problem I am running into is that when you apply the manifest, Knative relys on Kubernetes generateName to produce new Revision names. This gives each revision a random string appended to it. Meaning at time of deployment I do not know the revision name so I can not declare a rollout percentage to direct traffic between my new revision at deployment of a new revision. 
+\\Knative engineers on slack told me they are currently working on a proposal to solve this problem. So while this is not supported I am still able to show how easy we can direct traffic through different revisions. 
+\\For this example I will be going back to our original function where we just returned the target value. Now we will update the service.yaml and enter a new number in our env value parameter. Once done apply this change to our cluster. We must rinse and repeat, changing the env value parameter and applying the service.yaml file. If we now run the following:
+\begin{lstlisting}[language=bash]
+$ kubectl get deployments
+\end{lstlisting}
+We will be returned with something that looks like this:
+\begin{lstlisting}[language=bash]
+NAME                                 DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+r3x-hello-knative-sr958-deployment   0         0         0            0           1m
+r3x-hello-knative-wnqcj-deployment   0         0         0            0           3m
+\end{lstlisting}
+We now have our two deployments in Kubernetes, Knative id's these as revisions in that it sees \textit{r3x-hello-knative-sr958-deployment} as revision \textit{r3x-hello-knative-sr958}. Now we have everything we need, so we can now update our service.yaml, by replacing \textit{runLatest} under our spec with:
+\begin{lstlisting}[language=bash]
+...
+spec:
+  release:
+    revisions:
+      - r3x-hello-knative-sr958
+      - r3x-hello-knative-wnqcj
+    rolloutPercent: 50
+    configuration:
+...
+\end{lstlisting}
+What we are doing here is declaring our revisions for this deployment, and setting the rolloutPercent to 50, meaning traffic will be split 50 percent across both revisions.
+\begin{lstlisting}[language=bash]
+$ while true; do curl --header "Host: r3x-hello-knative.default.example.com" http://35.197.208.7;done
+
+{"message":"Hello RubiX Sample v1!"}{"message":"Hello RubiX Sample v2!"}{"message":"Hello RubiX Sample v1!"}{"message":"Hello RubiX Sample v1!"}...
+\end{lstlisting}
+And if we are watching our pods, we will see the two previous deployments spin up and our output from the curl will show the traffic split. This split does not appear to be in a round robin fashion, but does look to be around the 50 percent mark. 
+\\The current Knative project is in alpha at the moment, they are working hard on proposals for their Beta version, and as mentioned above they are looking towards stream lining this into a cleaner process as the infrastructure is there to easily allow us to configure our routes.
+
+\subsection{Building and Deploying a Real World App}
+So far we have mostly looked at helloworld examples of Knative. While they do showcase the technology and its capabilities often going from a helloworld to real app can be an up hill struggle but the knowledge gained from pushing passed helloworld truly is valuable. So with that I set out to develop a Web App on Knative. As I was searching for a novel idea as to what application I will build, as the actual use case of the app is unimportant what is important is the underlying technologies. When presented with an end 2 end lab in class for AWS and Lambda I decided to replicate this app on Knative and GCP, as it does give me some context to work off and pretty much a bench mark to compare off.
+\\The architecture of the App consists of the following and can be seen visually in Figure \ref{img:showapp}:
+\begin{itemize}
+    \item GKE cluster (Knative)
+    \item Google Storage
+    \item Google Datastore
+    \item Google Speech API
+    \item 1 NginX Server (Front End)
+    \item 4 RubiX Functions (Create, Delete, Dictate, List)
+\end{itemize}
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/showcase-api-3.png}
+\caption{\em Showcase App}
+\label{img:showapp}
+\end{figure}
+Before beginning, It is worth noting the biggest difference when working on GCP over AWS is their use of Projects. You create specific projects and in that project you build the architecture you need for your application. Which personally I feel is a nice touch as it keeps everything cleaner and more manageable when working on different projects, there is no naming conflicts and when the project is over you can delete the project, and all associated services in one click. When working on a budget this is a nice piece of mind. Another item that is worth the mention, which can be quite irritating at times is how they handle billing. So everything by default is locked to you. When you provision a specific service for the first time in a new project, lets say google database then you have to enable billing for google database for that project. Quite an easy step to do, but can become tedious.
+\\Now with that out of the way my first port of call was to create my project, enable my services and billing. Create a service user and download that key, which is a JSON file. The service user is given permissions to interact with the necessary services in our project. Enabling these services is quite mundane and well documented so for brevity I will be leaving them out of this paper.
+\\As Kubernetes clusters can be expensive I decided to build my application locally first before deploying it. My google services where provisioned so I could easily interact with them after I exported my service account key:
+\begin{lstlisting}[language=bash]
+$ export GOOGLE_APPLICATION_CREDENTIALS="/Users/ciaranroche/.gcd/rubix.json"
+\end{lstlisting}
+Once you export the path as specified above the Google SDK's will authenticate you and allow your localhost access. So a few days of development later I had my application running locally on 5 different ports all as node servers. Now this is where the fun starts.
+\\So we spin up the cluster as described in Section \ref{sub:instk}, next we need to mount our service user key as a secret. The full deployment file can be found at Appendix \ref{appendix:deploy}, but what we are interested here is:
+\begin{lstlisting}[language=bash]
+        ...
+            image: docker.io/muldoon/r3x-rubix-list
+            env:
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: /var/secret/rubix.json
+            volumeMounts:
+              - name: rubix-secret
+                mountPath: /var/secret
+          volumes:
+            - name: rubix-secret
+              secret:
+                secretName: google-rubix-secret
+\end{lstlisting}
+Each service we add a volume to our pod which points to the secret in our cluster. From that volume we mount it to our container. Next we set an environment variable which we give it that value of where our service user json file is. Before we can deploy that file we must create the secret in our cluster. This can be done:
+\begin{lstlisting}[language=bash]
+$ kubectl create secret generic google-rubix-secret --from-file=./rubix.json
+\end{lstlisting}
+This is where I run into the first problem. So my app runs fine local, now when I deploy it when I ping my pods I get no response. I check the logs and all I get is an error 14, with little other information. When I go looking online I find it hard to find anything about it only it is a TCP error. With nothing else to go on, I end up sitting down with 2 engineers at RedHat for an hour and they are unable to figure it out, so I reach out to the Knative community and create a thread on their Google Group. It turned out by default Istio and Knative does not allow traffic out from the cluster and we need to configure this outbound traffic ourselves. So in order to do this, we first need to determine the IP ranges of our cluster, the command here will cover this:
+\begin{lstlisting}[language=bash]
+$ gcloud container clusters describe ${CLUSTER_NAME} \
+--zone=${CLUSTER_ZONE} | grep -e clusterIpv4Cidr -e servicesIpv4Cidr
+\end{lstlisting}
+Now we have our range we need to set this scope to the istio sidecar to include these ranges. To do this we enter the following command and we edit the config file to something similar as below:
+\begin{lstlisting}[language=bash]
+$ kubectl edit configmap config-network --namespace knative-serving
+
+...
+apiVersion: v1
+data:
+  istio.sidecar.includeOutboundIPRanges: '10.16.0.0/14,10.19.240.0/20'
+kind: ConfigMap
+metadata:
+...
+\end{lstlisting}
+Now I redeployed my functions and was able to curl these functions from my terminal. Everything was looking good, it was just a matter of testing my frontend with my function end points. I updated my frontend and spun it up locally. This is where I ran into a world of problems with CORS. I dug into my actual HTTP server for my functions and ensured CORS was enabled, but it did not make a difference, I still ran into errors, finally I disabled CORS in the browser as I noticed the preflight OPTIONS request was not sending my host header to my cluster. When CORS was disabled my error changed to a 404. Again I was left scratching my head and could not find anything in the Knative docs, so I reached out to the community again and a workaround was given. Knative as of now does not allow us to configure CORS at the cluster domain gateway. The workaround was to leverage xip.io to create a dns wildcard and give us a url to directly access our pods. To do this we run the following:
+\begin{lstlisting}[language=bash]
+# Get Cluster IP address
+$ export IP_ADDRESS=$(kubectl get svc istio-ingressgateway -n istio-system -ojsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+# Configure Knative to use xip.io as domain suffix
+$ kubectl patch cm -n knative-serving config-domain  \
+  --type merge \
+  -p "{\"data\":{\"$IP_ADDRESS.xip.io\":\"\"}}"
+\end{lstlisting}
+With that done we can get our domain URL for our services:
+\begin{lstlisting}[language=bash]
+$ kubectl get ksvc r3x-rubix-list --output=custom-columns=NAME:.metadata.name,DOMAIN:.status.domain
+\end{lstlisting}
+An example output will be similar to this:
+\begin{lstlisting}[language=bash]
+NAME                DOMAIN
+r3x-rubix-list      http://r3x-rubix-list.default.35.246.108.94.xip.io
+\end{lstlisting}
+Now we can directly get to our service using the Domain address and allow us access it from the browser. I updated the frontend app with the latest domains, an example of one of my functions in the frontend app is:
+\begin{lstlisting}[language=bash]
+  list() {
+    var options = {
+        method: 'POST',
+        url: 'http://r3x-rubix-list.default.35.246.108.94.xip.io',
+        headers:
+        {
+            'Content-Type': 'application/json'
+        },
+    };
+    return new Promise(function (resolve, reject) {
+        request(options, function (err, resp, body) {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(body)
+            }
+        }).catch(function (err) {
+            console.log(err)
+        })
+    })
+}
+\end{lstlisting}
+We just need to deploy the frontend app now that we have our end points. Couple of things I want to point out here:
+\begin{lstlisting}[language=bash]
+# Stage 1 - Build App
+FROM node:8.15 as build-deps
+WORKDIR /usr/src/app
+COPY package.json package-lock.json ./
+RUN npm i
+COPY . ./
+RUN npm run build
+# Stage 2 - Prod Build
+FROM nginx:1.15.9-alpine
+COPY --from=build-deps /usr/src/app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+\end{lstlisting}
+First is the Dockerfile seen above, As my frontend is developed with React and Webpack, when I run npm build, webpack compiles my frontend to vanilla javascript and html. Because of this I can use a multistage Docker build. Now this is really cool in my opinon. In the first stage I am pulling in a full operating system with all node dependencies to allow me to build my front end. So once I use this stage to build my app, I can now kick off stage two where I just pull in an alpine nginx image, I can copy over my built files from stage one, expose my port and set my start command. A little bit of extra work at the Dockerfile gives me a smaller more secure Image for my frontend app.
+\\Now unfortubatly the next thing I want to point out is down to time which I dont have. Knative requires pods to listen on 8080, NginX runs at port 80 by default, to go in an configure this to work on port 8080 required time I didnt have. Meaning I could not deploy this to Knative. Which would of been really cool as it would of been a full serverless web app. So instead I have opted to deploy it as a normal deployment within my cluster. To do this I need to run the following to build and push our frontend:
+\begin{lstlisting}[language=bash]
+$ r3x build -p -n <<your docker user name>>
+\end{lstlisting}
+Now we will use kubectl to deploy the image to our cluster with this command:
+\begin{lstlisting}[language=bash]
+$ kubectl run rubix-web --image=docker.io/<<your docker user name>>/r3x-rubix-frontend --port 80
+\end{lstlisting}
+Our app is now running in our cluster, we can run get pods to verify this. Once the pod is running we need to expose this pod to the internet. Again with kubectl we enter:
+\begin{lstlisting}[language=bash]
+$ kubectl expose deployment rubix-web --type=LoadBalancer --port 80 --target-port 80
+\end{lstlisting}
+We just need the external IP of our new deployment of our frontend app. To get this we run:
+\begin{lstlisting}[language=bash]
+$ kubectl get service
+\end{lstlisting}
+There you have it, once we get the IP we can access our app in a browser and interact with our serverless functions via our web app. A demo video of this showcase app can be seen in Appendix \ref{appendix:r3xdemo}. If you would like to run the application yourself, go to the GitHub repo at Appendix \ref{appendix:r3xshow} and follow the documentation there.
+
+

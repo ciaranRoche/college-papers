@@ -1,0 +1,274 @@
+\newpage
+\section{Design}
+\label{sub:design}
+This section has notable differences to the Design section in the Status Report, this is due to changes and requirements to the project as more information became known. Following the Agile methodology allowed for an easy change to new requirements. The design laid out in this section is of the completed work to date.
+
+\subsection{System Architecture Overview}
+This project is essentially broke into multiple elements, each element consisting of its own architecture. The elements are as follows:
+\begin{itemize}
+    \item Command Line Interface
+    \item Software Development Kits
+    \item Showcase Application
+\end{itemize}
+
+\subsubsection{Command Line Interface}
+The CLI will be of modular design, consisting of a main application which will have common logic shared between all plugin modules. These plugin modules will consist of language specific logic associated with each of the supported languages of the product. The main application will utilise the Docker API to connect to the Docker Daemon. This can be seen illustrated in Figure \ref{img:cli-overview}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.5\textwidth]{images/cli-arch.png}
+\caption{\em Command Line Interface Architecture Diagram}
+\label{img:cli-overview}
+\end{figure}
+
+\subsubsection{Software Development Kits}
+\label{sub:sdks}
+There will be a number of SDK's developed as part of this project, each SDK will correspond to a single supported language to the project. Each individual SDK will follow the same architecture. This architecture can be seen in the form of a Class Diagram in Section \ref{sub:classdia}
+
+\subsubsection{Showcase Application}
+\label{sub:showap}
+The purpose of the Showcase Application is to demonstrate the power of deploying applications on Kubernetes with Knative. The showcase architecture can be seen illustrated in Figure \ref{img:showcase-arch}. It will be deployed on Google Cloud Platform and will consist of a React Single Page Application Frontend, with a REST API Backend which will leverage Googles Speech API to convert text to speech and store the speech output in Google Cloud Storage. The REST API will be built using the RubiX Framework and will show how the framework fits into a real world scenario.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/showcase-api-3.png}
+\caption{\em Highlevel Showcase Architecture Diagram}
+\label{img:showcase-arch}
+\end{figure}
+
+
+\subsection{Requirements}
+Based on meetings with engineers currently working within the Knative project along with engineers working within RedHat, the problem which was discussed in Section \ref{sub:problem} was identified. While identifying the problem a number of requirements were highlighted. These requirements will be split into two categories, Functional and Non-Functional. 
+
+It should be noted that these requirements were identified during the early stages of project planning and could be liable to change depending on the outcome of the Proof of Concept, discussed in Section \ref{sub:poc}.
+
+\subsection{Functional Requirements}
+The functional requirements listed below will be illustrated in Section \ref{sub:sequence} as Sequence Diagrams. Each requirement includes a rationale to help with understanding the purpose of it.
+\newline
+\\\textbf{R1 - Bootstrapping of a Function as a Container}
+\label{req:r1}
+\\ To allow a user easily create Functions as a Container, without abstracting anything from the user, giving freedom to test, debug and customise as needed.
+\newline
+\\\textbf{R2 - Create a Function as a Container Image}
+\label{sub:r2}
+\\ To improve the work flow by saving a developer from switching between tools throughout the creation of a Function as a Container lifecycle.
+\newline
+\\\textbf{R3 - Build a Function as a Container}
+\label{req:r3}
+\\ To allow for local deployment to an OCI compliant runtime independent of Knative and Kubernetes.
+\newline
+\\\textbf{R4 - Push a Function as a Container to a Registry}
+\label{req:r4}
+\\ To allow for a means of secure storage for a developers Functions as a Container without introducing adding complexity to a developers workflow by utilising systems already used by a developer.
+\newline
+
+\subsection{Non-Functional Requirements}
+The following is a number of non-functional requirements that were identified in the early stages of planning. These requirements fall under a number of broad categories.
+\newline
+\\\textbf{R5 - Maintainability:}\label{req:r10} The product as a whole must remain maintainable by implementing procedures to allow for the software elements to be modified to correct faults, improve performance and overall re-factoring of the code structure. 
+\newline
+\\\textbf{R6 - Quality:}\label{req:r11} Processes need to be in place to guarantee a high quality in the overall code base across all elements within the project. These processes should be built into CI/CD tools like those discussed in Section \ref{sub:meth}
+\newline
+\\\textbf{R7 - Security:}\label{req:r12} Systems to be in place to ensure unauthorised, accidental or unintended usage of a users Functions as a Container does not happen. Processes to ensure that the latest versions of dependencies are used where feasible \gls{CVE}
+\newline
+\\\textbf{R8 - Documentation:}\label{req:r13} Any addition to the project must be accompanied by concise and practical documentation. This documentation must be easily accessible to users.
+\newline
+\\\textbf{R9 - Performance:}\label{req:r14} All software must provide a minimal footprint on a user'
+s host, along with minimal response times. Thus reducing the time needed on CPU usage along with space taken on disk.
+\newline
+
+\subsection{Core Requirements and Stretch Goals}
+All requirements were broken into a number of user stories. These user stories can be seen in Section \ref{sub:user_stories}. On the creation of the user stories and the core requirements a minimum viable product (MVP) was defined and outlined. An MVP is a product with all core features given minimal functionality in order to provide feedback to further improve on in later sprits. Each story was tagged with an id which is reflected in the tables in Section \ref{sub:user_stories} with tags beginning with \textit{mvp}. Stretch goals can be identified by tags beginning with \textit{s}.
+\newpage
+\subsection{User Stories}
+\label{sub:user_stories}
+Following the Agile Methodology, which is discussed in Section \ref{sub:agile}, the planning of this project is broken into Epics and User Stories. As this project uses JIRA to track and plan the development progress throughout sprints, which is discussed in Section \ref{sub:JIRA}, there is a disconnect between what is a JIRA epic and story in comparison to the definition of an Agile epic and story. In order to minimise this disconnect Trello was used during the planning, discussed in Section \ref{sub:trello}, and the following rules were applied.
+
+User Stories would be broken into themes; each theme has an overview story. Each overview story will have a number of User Stories associated with it. These user stories would be treated as epics within JIRA and each epic will have a number of tasks associated with it. 
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.5\textwidth]{images/stories.png}
+\caption{\em Bridging the Agile -- JIRA gap}
+\label{img:bridging-agile}
+\end{figure}
+
+It must be noted that each User Story contains a \textit{What, Why, How} along with \textit{Acceptance Criteria} and \textit{Tasks}. For brevity these will be left out of the document but can be found on the associated Trello Board found at Appendix \ref{appendix:trellouser}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.3\textwidth]{images/stories1.png}
+\caption{\em JIRA Story -- Task}
+\label{img:jira-story}
+\end{figure}
+
+\clearpage
+\subsection{Themes}
+User Stories where thematically grouped under headings, to help with prioritisation and organisation. User story themes are as follows:
+\begin{itemize}
+    \item Containers
+    \item CLI
+    \item Security
+    \item Developer
+    \item Community
+    \item ShowCase
+\end{itemize}
+
+\subsection{User Definitions}
+A number users have been defined in order to add clarity to the user stories:
+\newline
+\textbf{1 -- General User Definition}: A user of the product who would ideally be a developer who is used to working with tools like \gls{Docker} and \gls{Kubernetes}, minimal admin privileges are granted
+\newline
+\textbf{2 -- Community User Definition}: A user of the product who is also a contributor.
+\newline
+\textbf{3 -- Org Owner Definition}: A developer to the product, with full admin and configuration privileges
+\newline \textbf{NOTE:} A Community User incorporates the user stories of a General user, while the Org Owner incorporates all users.
+
+
+\clearpage
+
+\textbf{Note : }The following sections contain all stories completed to date over the course of this project. The stories are sorted under their respected themes. For a full list of stories created for this project refer to Appendix \ref{appendix:stories}.
+
+\subsection{Containers}
+\textbf{Overview Story}
+\newline As a General User, I want a container function so that I can have full control over my FaaS
+
+\begin{table}[!ht]
+\begin{tabular}{|l|l|p{0.3\linewidth}|p{0.4\linewidth}|}
+\hline
+\textbf{\#} & \textbf{As a} & \textbf{I want to be able to}                                   & \textbf{Such that}                     \\ \hline
+mvp1        & General User  & create a JavaScript container                                   & I can leverage my own FaaS             \\ \hline
+mvp2        & General User  & handle HTTP requests in JavaScript                              & I can call my functions in a container \\ \hline
+mvp3        & Org Owner     & ability to read and write metadata from the request req context & give more control to my functions      \\ \hline
+mvp4        & General User  & create GoLang functions as a container                          & I can leverage my own FaaS             \\ \hline
+mvp5        & General User  & create Python functions as a container                          & I can leverage my own FaaS             \\ \hline
+mvp6        & General User  & create Java functions as a container                            & I can leverage my own FaaS             \\ \hline
+mvp7        & General User  & create Haskell Functions as a container                         & I can leverage my own FaaS             \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Security}
+\textbf{Overview Story}
+\\As a General User I want to have confidence in my container functions such that the container functions are as secure as possible
+
+\begin{table}[!ht]
+\begin{tabular}{|l|l|p{0.3\linewidth}|p{0.4\linewidth}|}
+\hline
+\textbf{\#} & \textbf{As a} & \textbf{I want to be able to}             & \textbf{Such that}                                                                               \\ \hline
+mvp17       & General User  & make my images as minimal as possible     & I can ensure malicious code can not be injected or introduced to my containers during deployment \\ \hline
+mvp18       & Org Owner     & have my systems protected from known CVEs & To ensure there is no known vulnerabilities in the latest release of the framework               \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{CLI}
+\textbf{Overview Story}
+\\ As a General User, I want to be able to control the lifecycle of my container functions so that I can increase productivity while maintaining full control and ownership of my container functions
+
+\begin{table}[!ht]
+\begin{tabular}{|l|l|p{0.3\linewidth}|p{0.4\linewidth}|}
+\hline
+\textbf{\#} & \textbf{As a} & \textbf{I want to be able to}                         & \textbf{Such that}                                                                                                         \\ \hline
+mvp8        & General User  & bootstrap the creating of container functions         & productivity of using container functions is increased abstracting the mundane tasks away so I can focus on the functions. \\ \hline
+mvp9        & General User  & push my container function to a registry              & I can easily access and store my functions                                                                                 \\ \hline
+mvp10       & General User  & easily create a container function                    & I maintain full control and ownership of my container function                                                             \\ \hline
+mvp11       & General User  & bootstrap the creating of golang container functions  & productivity using container functions is increased abstracting the mundane tasks away so i can focus on the functions     \\ \hline
+mvp12       & General User  & bootstrap the creating of python container functions  & productivity using container functions is increased abstracting the mundane tasks away so i can focus on the functions     \\ \hline
+mvp13       & General User  & bootstrap the creating of haskell container functions & productivity using container functions is increased abstracting the mundane tasks away so i can focus on the functions     \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Developer}
+\textbf{Overview Story}
+\\As an Admin User I want to ensure consistency throughout the project so that the project code base maintains a high standard
+
+\begin{table}[!ht]
+\begin{tabular}{|l|l|p{0.3\linewidth}|p{0.4\linewidth}|}
+\hline
+\textbf{\#} & \textbf{As a} & \textbf{I want to be able to} & \textbf{Such that} \\ \hline
+mvp14 & Org Owner & build each commit to an org repo & I can track the progress of the project and highlight any issues as early as possible into the development. \\ \hline
+mvp15 & Org Owner & application to be available via a container registry & I can easily access, install and run the applications \\ \hline
+mvp16 & Org Owner & make SDKs available for installation through package management tools & It makes it easier for users to utilise the Framework \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Community}
+\label{sub:communitystor}
+\textbf{Overview Story}
+\\As a General User I want this project to be developed in the open so that I can benefit from the transparency while being able to contribute to and give back to the project
+
+\begin{table}[!ht]
+\begin{tabular}{|l|l|p{0.3\linewidth}|p{0.4\linewidth}|}
+\hline
+\textbf{\#} & \textbf{As a}  & \textbf{I want to be able to}                       & \textbf{Such that}                                      \\ \hline
+mvp19       & Community User & all repo's open and under a single organisation     & I can easily find and browse the available repo's       \\ \hline
+mvp20       & Community User & a clearly defined definition of done                & I can easily contribute to the project and get involved \\ \hline
+mvp21       & Community User & have all documentation consolodated in one location & I can easily find and browse the documentation          \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Showcase}
+\label{sub:showcasesto}
+\textbf{Overview Story}
+\\As a General User I want a showcase application to provide a real world example of the efficiency and usage of this framework as well as showing how Knative handles serverless workloads.
+
+\begin{table}[!ht]
+\begin{tabular}{|l|l|p{0.3\linewidth}|p{0.4\linewidth}|}
+\hline
+\textbf{\#} & \textbf{As a} & \textbf{I want to be able to}                         & \textbf{Such that}                                                                 \\ \hline
+mvp22       & Org Owner     & arch diagrams for my showcase application             & to help speed development of my showcase application                               \\ \hline
+mvp23       & Org Owner     & REST Serverless functions                             & to show a common pattern developed in serverless architecture                      \\ \hline
+mvp24       & Org Owner     & show a function that interacts with Google Speech API & the showcase application can convert text to speech                                \\ \hline
+mvp25       & Org Owner     & I want a front end application                        & it will allow a user to access the serverless functions                            \\ \hline
+mvp26       & Org Owner     & have a Google Project configured                      & it allows for a quick and easy environment to develop and test the applications in \\ \hline
+\end{tabular}
+\end{table}
+
+\clearpage
+\subsection{SDK Class Diagram}
+\label{sub:classdia}
+Outlined in Section \ref{sub:sdks}, there will be a number of \gls{SDK}'s developed throughout this project. Each SDK will follow the class structure outlined in Figure \ref{img:sdk-class}
+\begin{figure}[!hb]
+\centering
+\includegraphics*[width=1\textwidth]{images/sdk-class-dia.png}
+\caption{\em SDK Class Diagram}
+\label{img:sdk-class}
+\end{figure}
+
+\newpage
+\subsection{CLI Sequence Diagram}
+\label{sub:sequence}
+A number of sequence diagrams have been created to show object interactions between the \gls{CLI}, \gls{Docker} \gls{API} and \gls{Docker} Daemon.
+
+\subsubsection{Initializing a Project}
+Initializing a project via the command line, to improve the work flow and provide the scaffolding needed for a user to develop a function as a container.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/init-use-case.png}
+\caption{\em CLI Sequence Diagram for Init a Project}
+\label{img:cli_seq1}
+\end{figure}
+\\\textbf{Sequence Steps}
+\begin{enumerate}
+  \item User executes the init command, passing flags to declare type of function and function type
+  \item CLI checks for naming conflicts before creating a new directory
+  \item CLI checks values for license type and creates a license
+  \item CLI checks the function type and executes function type logic to create function specific files
+\end{enumerate}
+
+\subsubsection{Building and Pushing Container}
+Building a Container locally and Pushing to a registry. It was decided to combine this functionality into a single command to add extra value to the CLI over using existing tools such as Docker CLI
+\begin{figure}[!hb]
+\centering
+\includegraphics*[width=1\textwidth]{images/build-use-case.png}
+\caption{\em CLI Sequence Diagram for Building and Pushing a Container}
+\label{img:cli_seq2}
+\end{figure}
+\\\textbf{Sequence Steps}
+\begin{enumerate}
+  \item User executes build command and the CLI checks passed flags
+  \item User is then authenticated through Docker
+  \item A TAR file is created of the project and a build is triggered
+  \item If the user has passed the push flag, then a push of the image is triggered on a successful build. 
+  \item On a successful push, the Knative manifest is created.
+\end{enumerate}
+\clearpage

@@ -1,0 +1,23 @@
+\newpage
+\section{Tools}
+\subsection{Project Management Tools}
+\subsubsection{JIRA}
+\label{sub:JIRA}
+JIRA is a proprietary issue tracking product developed by Atlassian. It allows for the planning, tracking and management of Agile projects with stories and tasks broken down into a series of JIRA tickets. These tickets are stored in the backlog within JIRA allowing for the planning of sprints and managing the overall goal of each sprint. 
+\\ As discussed in Section \ref{sub:user_stories}, to meet the void between JIRA, Agile and Scrum in what defines an epic, story and task a number of rules were set. Each story that was defined had a number of tasks associated with. These tasks were small achievable increments that would lead to satisfying the acceptance criteria set for each story. The story would be seen in JIRA as an Epic and the corresponding tasks would be outlined as tickets within JIRA. 
+\subsubsection{Trello}
+\label{sub:trello}
+Mentioned in Section \ref{sub:JIRA}, there is a disconnect between between JIRA, Agile and Scrum definitions. Due to this it was decided to incorporate Trello within the planning phases of the project. Trello is an online tool for tracking and project management. Due to its ease of use and a high standard of visualisation it made it easier to plan the User Stories for this project. The board used for planning can be found at Appendix \ref{appendix:trellouser}. This also allows for a higher level of abstraction, with Trello being more suited to story level discussions and JIRA more granular, technical level.
+\subsubsection{Trira}
+\label{sub:trira}
+As Trello has a rich API a number of tools and plugins have been made to increase the usability of Trello. One tool which is used throughout this project is the Open-Source tool Trira. It can be found at Appendix \ref{appendix:triragithub}. It allows for the synchronisation between JIRA and Trello through the use of a command line tool. A separate Trello Board was set up for porting User Story Tasks to JIRA tickets. This can be found at Appendix \ref{appendix:trellotrira}
+\subsubsection{GitHub}
+\label{sub:git}
+The architecture of this project as described in Section \ref{sub:design} will incorporate a number of different code bases. To allow for the ease of version control on multiple code bases GitHub is used. All code will be housed within multiple repositories under an organisation on GitHub. The project willl adhere to semver standards for versioning.
+\subsection{Technical Tools}
+\subsubsection{CircleCI}
+\label{sub:circle}
+CircleCI is the tool chosen to handle all continuous integration of the platform. It will be incorporated into all GitHub repositories and will allow for the automation of deployments throughout the projects lifetime.
+\subsubsection{Coveralls}
+\label{sub:cover}
+In order to eliminate technical debt Coveralls is used to highlight untested areas of the codebase. It will work with the continuous integration to expose any gaps.

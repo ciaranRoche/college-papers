@@ -1,0 +1,204 @@
+\documentclass{article}
+
+%-----------------------------------------------PACKAGES-------------------------------------------------------------%
+\usepackage{graphicx} %images
+\DeclareGraphicsExtensions{.pdf,.png,.jpg} % configures latex to look for the following image extensions
+\usepackage{setspace} % allows for configuring the linespacing in the document
+\usepackage{caption}
+\usepackage{natbib}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage[explicit]{titlesec}
+\usepackage[toc,page]{appendix}
+\usepackage{hyperref}
+\usepackage[dvipsnames,svgnames,x11names]{xcolor}
+\usepackage{cleveref}
+\setcounter{tocdepth}{2}
+\usepackage[nottoc]{tocbibind}
+\usepackage[parfill]{parskip}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage{listings} % to use code snippets 
+\usepackage{color}
+
+\usepackage{glossaries} % for glossary
+\makeglossaries 
+\glstoctrue
+\include{components/glossary} 
+
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+
+\lstdefinelanguage{GoLang}{
+  keywords={break, case, chan, const, continue, default, defer, else, fallthrough, for, func, go, goto, if, import, interface, map, package, range, return, select, struct, switch, type},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={class, export, exports, boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstset{
+   language=GoLang,
+   backgroundcolor=\color{lightgray},
+   extendedchars=true,
+   basicstyle=\footnotesize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   numbers=left,
+   numberstyle=\footnotesize,
+   numbersep=9pt,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false,
+   captionpos=b
+}
+
+\usepackage{hyperref}
+\newcommand\myshade{85}
+\colorlet{mylinkcolor}{NavyBlue}
+\colorlet{mycitecolor}{YellowOrange}
+\colorlet{myurlcolor}{Aquamarine}
+
+\hypersetup{
+  linkcolor  = mylinkcolor!\myshade!black,
+  linktocpage=true,
+  citecolor  = mycitecolor!\myshade!black,
+  urlcolor   = myurlcolor!\myshade!black,
+  colorlinks = true,
+}
+
+
+
+% Review comments stuff
+% -----------------------------------------
+\usepackage[english]{babel}
+\usepackage[markup=underlined]{changes}
+% Use "final" option to remove all tracking markups
+% \usepackage[final]{changes}
+
+\definechangesauthor[color=BrickRed]{RB}
+\definechangesauthor[color=Green]{CR}
+
+% Alternative definition to have the remarks
+% in the margins instead of footnotes
+\usepackage{todonotes}
+\setlength{\marginparwidth}{3cm}
+\makeatletter
+\setremarkmarkup{\todo[color=Changes@Color#1!20,size=\scriptsize]{#1: #2}}
+\makeatother
+
+%% Definition of a plain remark/note
+\newcommand{\note}[2][]{\added[#1,remark={#2}]{}}
+
+% -----------------------------------------
+
+\bibliographystyle{agsm}
+\setcitestyle{authoryear,open={(},close={)}}
+
+\begin{document}
+\pagenumbering{roman}
+\onehalfspacing
+\hypersetup{pageanchor=false}
+\include{components/college_title}
+\hypersetup{pageanchor=true}
+\clearpage
+\begin{center}
+\begin{minipage}{\textwidth}
+  
+  {\scshape\large \textbf{Plagiarism Declaration}\par}
+  \vspace{1cm}
+  Unless otherwise stated all the work contained in this report is my own.  I also state that I have not submitted this work for any other course of study leading to an academic award.
+  
+\end{minipage}
+\end{center}
+\vfill % equivalent to \vspace{\fill}
+\clearpage
+
+\newpage
+\include{components/acknowledgements}
+
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+\listoftables
+\newpage
+\printglossaries
+
+\newpage
+\pagenumbering{arabic}
+\include{components/introduction}
+
+\newpage
+\include{components/methodology}
+
+\newpage
+\include{components/technologies}
+
+\newpage
+\include{components/tools}
+
+\newpage
+\include{components/design}
+
+\newpage
+\include{components/implementation}
+
+\newpage
+\include{components/summary}
+
+
+\newpage
+\appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+\subsection{GitHub Organization} 
+\label{appendix:githuborg}
+https://github.com/rubixFunctions
+
+\subsection{Circle CI Repository} 
+\label{appendix:circleci}
+https://circleci.com/gh/rubixFunctions
+
+\subsection{Trello User Stories}
+\label{appendix:trellouser}
+https://trello.com/invite/b/1tnWUrMa/9be869b4b608c1a9c8fb40ff4723f18b/r3x-user-stories
+
+\subsection{Trira GitHub}
+\label{appendix:triragithub}
+https://github.com/aerogear/trira
+
+\subsection{Trello Trira Board}
+\label{appendix:trellotrira}
+https://trello.com/invite/b/VgT5oxJ3/d6a4fa66d09c13e37f3b6c0a7969d3a7/rubix-task-planning-board
+
+\subsection{Prototype One}
+\label{appendix:proto1}
+https://quay.io/repository/ciaranroche/r3x-poc-1
+
+\subsection{Prototype Two}
+\label{appendix:proto2}
+https://github.com/rubixFunctions/r3x-js-sdk
+
+\subsection{SDK Showcase}
+\label{appendix:sdkshowcase}
+https://github.com/rubixFunctions/r3x-js-showcase
+
+
+
+
+
+\newpage
+\bibliography{bibliography}
+
+\end{document}

@@ -1,0 +1,174 @@
+\documentclass{article}
+
+%-----------------------------------------------PACKAGES-------------------------------------------------------------%
+\usepackage{graphicx} %images
+\DeclareGraphicsExtensions{.pdf,.png,.jpg} % configures latex to look for the following image extensions
+\usepackage{setspace} % allows for configuring the linespacing in the document
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{natbib}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage[explicit]{titlesec}
+\usepackage[toc,page]{appendix}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{cleveref}
+\setcounter{tocdepth}{2}
+\usepackage[nottoc]{tocbibind}
+\usepackage[parfill]{parskip}
+\usepackage[english]{babel}
+\usepackage{blindtext}
+\usepackage{color}
+\usepackage{listings} % to use code snippets 
+\usepackage{color}
+\lstdefinelanguage{GoLang}{
+  keywords={break, case, chan, const, continue, default, defer, else, fallthrough, for, func, go, goto, if, import, interface, map, package, range, return, select, struct, switch, type},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={class, export, exports, boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstset{
+   language=GoLang,
+   backgroundcolor=\color{lightgray},
+   extendedchars=true,
+   basicstyle=\footnotesize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   numbers=left,
+   numberstyle=\footnotesize,
+   numbersep=9pt,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false,
+   captionpos=b
+}
+
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+
+
+\usepackage{hyperref}
+\newcommand\myshade{85}
+\colorlet{mylinkcolor}{NavyBlue}
+\colorlet{mycitecolor}{YellowOrange}
+\colorlet{myurlcolor}{Aquamarine}
+
+\hypersetup{
+  linkcolor  = mylinkcolor!\myshade!black,
+  linktocpage=true,
+  citecolor  = mycitecolor!\myshade!black,
+  urlcolor   = myurlcolor!\myshade!black,
+  colorlinks = true,
+}
+
+\bibliographystyle{agsm}
+\setcitestyle{authoryear,open={(},close={)}}
+
+\begin{document}
+\onehalfspacing
+\hypersetup{pageanchor=false}
+\include{components/college_title}
+\hypersetup{pageanchor=true}
+\clearpage
+\begin{center}
+\begin{minipage}{\textwidth}
+  
+  {\scshape\large \textbf{Plagiarism Declaration}\par}
+  \vspace{1cm}
+  Unless otherwise stated all the work contained in this report is my own.  I also state that I have not submitted this work for any other course of study leading to an academic award.
+\end{minipage}
+\end{center}
+\vfill % equivalent to \vspace{\fill}
+\clearpage
+
+\tableofcontents
+
+\newpage
+
+
+\newpage
+\include{components/introduction}
+
+\newpage
+\include{components/description}
+
+\newpage
+\include{components/work_carried_out}
+
+\newpage
+\include{components/summary}
+
+\appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+\subsection{Moby Seccomp Defaults} 
+\label{appendix:seccomp}
+https://raw.githubusercontent.com/moby/moby/master/profiles/seccomp/default.json
+
+\subsection{Docker Capabilities}
+\label{appendix:capab}
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=\textwidth]{images/term5.png}
+\caption{\em Docker capabilities by default}
+\end{figure}
+\newpage
+\subsection{CIS Guide Extract}
+\label{appendix:cis}
+\textbf{1.1 Ensure a separate partition for containers has been created (Scored)}
+
+\textbf{Profile Applicability:}
+
+Level 1 - Linux Host OS 
+
+\textbf{Description:}
+
+All Docker containers and their data and metadata is stored under /var/lib/docker directory. By default, /var/lib/docker would be mounted under / or /var partitions based on availability.
+
+\textbf{Rationale:}
+
+Docker depends on /var/lib/docker as the default directory where all Docker related files, including the images, are stored. This directory might fill up fast and soon Docker and the host could become unusable. So, it is advisable to create a separate partition (logical volume) for storing Docker files.
+
+\textbf{Audit:}
+
+At the Docker host execute the below command:
+
+\textit{grep /var/lib/docker /etc/fstab}
+
+This should return the partition details for /var/lib/docker mount point. 
+
+\textbf{Remediation:}
+
+For new installations, create a separate partition for /var/lib/docker mount point. For systems that were previously installed, use the Logical Volume Manager (LVM) to create partitions.
+
+\textbf{Impact:}
+
+None.
+
+\textbf{Default Value:}
+
+By default, /var/lib/docker would be mounted under / or /var partitions based on availability.
+
+\textbf{References:}
+
+https://www.projectatomic.io/docs/docker-storage-recommendation/
+
+\textbf{CIS Controls:}
+
+14 Controlled Access Based on the Need to Know Controlled Access Based on the Need to Know
+
+\newpage
+\bibliography{bibliography}
+
+\end{document}

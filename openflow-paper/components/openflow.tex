@@ -1,0 +1,126 @@
+\section{OpenFlow}
+\textit{'OpenFlow is a communications protocol that gives access to the forwarding plane of a network switch or router over the network.'} \citep{wikipedia_2018} This definition is the result of Google, coming directly from Wikipedia. By the end of this section I will demonstrate an understanding of this definition and provide some context to it.
+\\An understanding of what a Software-Defined Network (SDN) is, is needed before discussing OpenFlow. We should consider an SDN as a paradigm for the decoupling of forwarding hardward and the control decisions. In other words, it is the physical separation of the network control plane from the forwarding plane. It allows for the control plane to be extensible in that it can control multiple devices \citep{open_net}.
+\\If we think of the control plane as the state of our routers and switches, in that the control plane worries about how and where packets are forwarded, it deals with routing, traffic engineering, firewall and all that good stuff. This is where OpenFlow fits in. As it is a communications protocol that enables the SDN Controller to interact with the control plane of a networks devices. We think of a controller as the essential brain behind an SDN network as it relays information around the network to switches/routers via southbound APIs \citep{sdxcentral}.
+\\Through this information, we are able to push changes to our network nodes, in the form of flows. We can insert flows into our nodes flow-tables which allow us to partition traffic, control flows and tweak for optimal performance. Through the use of flows we are able to leverage our own firewall within a switch. And this will be demonstrated within Section \ref{sub:prat}.
+\clearpage
+\section{Practical}
+\label{sub:prat}
+\subsection{Prerequisites} 
+To start this practical section I must mention a few prerequisites and define some terminology which is used in this practical. The practical itself builds upon the tutorial linked in Appendix \ref{appendix:openflow}. To build our development environment we use an OpenFlowTutorial VM. Within this Virtual Machine we get a number of utilities out of the box:
+\\\textbf{OpenFlow Controller} -- this acts as an Ethernet learning switch when combined to an OpenFlow switch. This is used in the early parts of the practical as I became familiar with the workings of OpenFlow.
+\\\textbf{OpenFlow Switch} -- Like the Controller above, this is used in the early stages of the practical gaining experince of the new technologies.
+\\\textbf{ovs-ofctl} -- is a command line tool used for debugging and testing throughout the practical. As it allows for the quick sending of OpenFlow messages. As well as manually setting flows within the switches. Combined with the two mentioned above, they where used to further explore the environment and capabilities of OpenFlow and SDN.
+\\\textbf{WireShark} -- This graphical utility provided an interface to easily view the OpenFlow message patterns. Using the filter \textit{of} I was easily abple to parse and view OpenFlow messages throughout the pracitical.
+\\\textbf{iperf} -- is a cli that allows for the testing of speed withing a TCP connection. While included in the VM I did not use this during the practical.
+\\\textbf{Mininet} -- creates a virtual OpenFlow network. Through the use of a single command I was easily able to spin up an OpenFlow network which will be showing in Section \label{sub:net}
+\\\textbf{cbench} -- a utility tool for testing the flow setup rate of OpenFlow controllers.
+
+
+
+\clearpage
+
+\subsection{The Network}
+\label{sub:net}
+The following command was used to generate the topology seen in Figure \ref{img:opentop} -- \textit{\$ sudo mn --topo single,8 --mac --switch ovsk --controller remote}. This could of been scripted, but looking at the number of lines of code needed to generate the topology I decided on using the one-liner instead.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/openflow.png}
+\caption{\em OpenFlow Topology}
+\label{img:opentop}
+\end{figure}
+
+\subsection{Steps Taken}
+Before talking through the steps I need to point out there is two kind of flows, a proactive and a reactive. Reactive flows happen on when a message is received the controller looks for a match and creates a flow. Where as a proactive flow is where flows are inserted ahead of time. For the purpose of this practical I focused on proactive flows mainly due to my own skill level in python, as I do not care to admit the time it took me to read in and parse the CSV file.
+\\To begin as our CSV file had both IP and MAC address to deal with, I decided to split the list into two. The initial lists can be seen in Figure \ref{img:p1} along with the hardcoded CSV location.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/p1.png}
+\caption{\em Declaring Lists}
+\label{img:p1}
+\end{figure}
+If we look at Figure \ref{img:p2}, I am parsing the CSV file, for every line in the file I am checking the key, if it is equal to \textit{MAC} I am adding creating a tuple containing the \textit{srcMac} and \textit{dstMac} and adding it to my mac list. If it doesnt have the key \textit{MAC} I am creating a tuple containing \textit{srcIP} \textit{destIP} and \textit{destPort}. This tuple was added to my ip list.
+\\Just to note, the csv contained a wildcard for the destPort, later on when creating the flow I had no way to handle the wildcard, so for that I added a check here. And let any wild cards equal to zero, I picked zero as this is a port that is not used. Another thing worth mentioning, as I was creating the tuples, I cast the following to the values, EthAddr to mac addresses, IpAddr to IP addresses and a regular int to port numbers, this is required when creating the flow that the inputs are of correct value. Using the casts I was able to add the subnet mask to the IP addresses
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/p2.png}
+\caption{\em Parsing CSV File}
+\label{img:p2}
+\end{figure}
+Figure \ref{img:p3} shows my function for adding flows. It consists of two for loops that iterates my IP and MAC lists. For every tuple it creates a rule. It does this through the use of openflow match function. With the flow created I declare an openflow mod type which I set my match to block before sending it to my connection.
+\\Worth pointing out in the case of the port on the IP address, I add a check so that if the port is greater then 0 then set the proto 6, and the port to that specified in the tuple else dont add a port to the flow. In this case with no port added it blocks all communication between the two IP's. Proto 6 sets the type to TCP. Another thing worth mentioning I needed to set the type to 0x0800 which set the flow to match on Ethernet frames.
+\\This function was executed within the \textit{init} function belonging to the ActLikeSwitch solution.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/p3.png}
+\caption{\em Adding Flows}
+\label{img:p3}
+\end{figure}
+
+\subsection{Verification}
+\label{sub:ver}
+The following section shows images demonstrating the verification steps. For brevity I have added the descriptions to the image tags explaining the steps.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/o1.png}
+\caption{\em Creating the Topology}
+\label{img:o1}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/o2.png}
+\caption{\em Showing there is no connectivity due to their being no controller}
+\label{img:o2}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/o3.png}
+\caption{\em Creating the controller, ActLikeFirewall}
+\label{img:o3}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/o4.png}
+\caption{\em Flows being added to table}
+\label{img:o4}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/o5.png}
+\caption{\em The flow table showing newly created flows, based on input from csv}
+\label{img:o5}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/o6.png}
+\caption{\em 3 windows showing a http server running on h7 and h6, h4 is allowed to communicate with h7 but is blocked from h6}
+\label{img:o6}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/o7.png}
+\caption{\em Ping showing the rules imposed on communication between h3 and h4}
+\label{img:o7}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/o8.png}
+\caption{\em Ping showing the rules imposed on communication between h1 and h3}
+\label{img:o8}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=0.7\textwidth]{images/o9.png}
+\caption{\em Ping showing the rules imposed on communication between h1 and h2}
+\label{img:o9}
+\end{figure}

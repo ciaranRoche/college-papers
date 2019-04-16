@@ -1,0 +1,68 @@
+\section{Introduction}
+\subsection{Motivation}
+\label{sub:motivation}
+As seen in Figure \ref{img:strend}, serverless computing is the number one growing cloud service \citep{survey_2018}. As with many trends in software, there is no one clear view of what \gls{Serverless} is. It was first used to describe applications that fully incorporate  third-party, cloud-hosted applications and services. Another term often used to describe these type of architectures is Backend as a Service or \gls{BaaS}. Today \gls{Serverless} is the term used to describe applications where the server-side logic is written by the applications developer but unlike traditional architectures it is event-triggered, meaning that a server is not constantly running but instead events trigger the compute containers \citep{Martin.Fowler}. This is often referred to as Functions as a Service or \gls{FaaS}. A popular implementation of this is \gls{AWS Lambda}. For the purpose of this report. I will be using the \citep{Martin.Fowler} definition of \gls{Serverless}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/a1.png}
+\caption{\em Top Growing Cloud Services -- \cite{survey_2018}}
+\label{img:strend}
+\end{figure}
+
+One of the main benefits and motivation for the project is that it reduces operational cost, as one only pays for the compute power they need as opposed to a constant running server instance. Another aspect of the operational costs stem from the development as developers can focus on business logic of their application over building the infrastructure around their application \citep{Martin.Fowler}. 
+
+The \gls{Cloud Foundry Foundation}\footnote{https://www.cloudfoundry.org -- a multi-cloud application platform.} conducted a global survey of their users and found that 22\% are already using \gls{Serverless} technology \citep{foundry_2018}. And with almost half their users evaluating the technology. This kind of trend is supported by research conducted by Cloudability \citep{report:cloudability}. This suggests that the area of \gls{Serverless} computing is growing rapidly.
+
+Further backing the growth of \gls{Serverless}, Google announced the launch of their \gls{Knative}\footnote{https://cloud.google.com/knative/ -- middleware components for container-based applications.} project which is based on the \gls{Kubernetes}\footnote{https://kubernetes.io -- container-orchestration system for automating deployment.} engine and developed by Google, Pivotal, IBM, Red Hat and SAP. Knative provides a suite of developer-focused middleware tools for building, deploying and managing serverless applications on the \gls{Kubernetes} engine \citep{bryant_2018}.
+
+The adoption rate of \gls{Serverless} technologies, mixed with a personal interest in the migration of conventional monolithic applications to microservice \gls{Serverless} applications, led me to explore problems around \gls{Serverless} that could be solved as a topic for my Final Year Project.
+
+\subsection{Problem Statement}
+\label{sub:problem}
+Notwithstanding the many benefits outlined in Section \ref{sub:motivation}, there are a number of identified problems with \gls{Serverless} technologies. A report by DigitalOcean highlighted that the biggest challenge faced by \gls{Serverless} was the ability to monitor and debug \citep{digitalocean_2018}. This was shown to be down to the layers of abstraction by particular vendors and their \gls{Serverless} services.
+\\While \gls{Knative} looks after the orchestration of a \gls{Serverless} application within \gls{Kubernetes} seamlessly, thus reducing the number of layers of abstraction, it is up to the developer to build, configure and package their functions in a container. This pattern goes against one of the main benefits of \gls{Serverless} in that a developer can focus their time on the business logic over the configuration of the infrastructure thus reducing operational costs.
+\\This project will look to solve both problems outlined above and will be discussed in detail in Section \ref{sub:aims}.
+
+\subsection{Industry Example}
+\label{sub:example}
+As discussed in Section \ref{img:strend} \gls{Serverless} adoption and usage is rising. It can be leveraged to fit almost any use case, but to put it in practical terms an example is provided here. A typical use case for a \gls{Serverless} function, which can be seen in Figure \ref{img:servex}, is a function which is triggered when an image is uploaded to a web application. The web application would consist of a regular \gls{REST}ful service. When an image is uploaded to the \gls{REST}ful service, the function would back up the content to a persistent storage similar to \gls{S3} in \gls{AWS}. This is an easy and very economical use case as a user would never have to worry about infrastructure provisioning or about scaling server instances to accommodate load. The function would not be consuming resources within the \gls{REST}ful web service and would only be in involked when needed.
+\begin{figure}[!ht]
+\centering
+\includegraphics*[width=1\textwidth]{images/server-fun.png}
+\caption{\em Serverless Example}
+\label{img:servex}
+\end{figure}
+
+\subsection{Aims and Objectives}
+\label{sub:aims}
+With the aim to solve the problems outlined in Section \ref{sub:problem} the overall goal is to provide an \gls{Open-Source} tool to allow software engineers to easily create \gls{FaaC} to be utilised by \gls{Knative}. 
+
+\begin{itemize}
+    \item [\textbf{AO1}] - Provide support for building \gls{FaaC} in multiple languages. This will reduce the cost of entry, as developers can use a language that best fits their use case or expertise.
+    \item [\textbf{AO2}] - The ability to easily debug functions. Solving the main identified problem with \gls{Serverless}, by providing the means for easy debugging will help increase adoption rate.
+    \item [\textbf{AO3}] - Confidence in a Function as a Container being as secure as possible. By removing layers of abstraction the developers can have confidence in their containers being up to date and as secure as possible.
+    \item [\textbf{AO4}] - The means to test Functions as a Container locally before deployment. Alleviating a barrier to entry by providing a simple method to test functions locally without the need for dedicated development environments. 
+    \item [\textbf{AO5}] - The project to be transparent and developed in the open. This will allow for the community to mold and adapt the project to best fit their needs, overall increasing the quality and the uptake of the project.
+    \item [\textbf{AO6}] - The means to control the life cycle of a Function as a Container. This will increase the speed of local development by providing the developer with the tools needed to fit their development needs, thus reducing the need to switch between tools.
+\end{itemize}
+
+\newpage
+The project will utilise common patterns that would be native to a software engineer already working in the space of \gls{Container}s and \gls{Kubernetes}. It will consist of the following:
+
+\begin{itemize}
+    \item \textbf{CLI:} An easily extensible command line interface following the same work flow such as tools like \gls{Docker} CLI and \gls{Kubernetes} Kubectl.
+    \item \textbf{SDK's:} A suite of \gls{SDK}'s to support the creation of Functions as a Container in multiple programming paradigms.
+    \item \textbf{Showcase Application:} To demonstrate a modern \gls{Serverless} application running in the \gls{Kubernetes} engine.
+\end{itemize}
+
+\subsection{Contributions}
+The end result of this project will be a Framework which provides a suite of \gls{SDK}'s and a \gls{CLI} that will reduce the barrier of entry to \gls{Serverless} development. The project will be developed in the open with the goal to build a community that will allow the development be guided by the needs of the \gls{Serverless} community as a whole. On the back of the project a number of applications to talk at conferences will be submitted, with a local tech talk already confirmed for Match 2019.
+
+
+\subsection{Outline}
+This report is broken into seven sections. This section, the first, is an overall introduction covering motives and the problem to be solved along with contributions that I intend to make. In section two the methodologies this project will follow are explored and discussed. The third section looks to examine the technological choices. Section four outlines the tools used to aid development of the project. The system architecture, requirements and user stories, make up the design of the project, which is captured in Section five. Section six discusses the prototype including a demonstration. Finally section seven reviews all completed work to date and looks toward work to be completed.
+
+This project is sponsored by Red Hat, allowing access to tools such as \gls{JIRA} along with acting as stakeholders in the project. As stakeholders Red Hat fulfill the role of product owner ensuring the development of this product meets the requirements set to solve the problem stated in Section \ref{sub:problem}. This is not a paid or monetary sponsorship.
+
+This project is supervised by Dr. Rosanne Birney.

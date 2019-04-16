@@ -1,0 +1,26 @@
+\section{Summary}
+\label{sub:summary}
+We have gained an understanding on the underlying architecture to Docker and OCI containers (namespaces and cgroups). But with that we have come to realize that due to Docker running containers in isolation, and having its own built in security in mind it is easy for developers to forget and not think about security when it comes to working with Containers. 
+
+We have shown some security threats to Docker Containers despite default security settings, so with that in mind below is a number of practises to follow to help secure your containers.
+
+\subsection{Immutable Containers}
+It is often the case to leave shell access to images, this is considered bad practise as it opens up to attackers exploiting the container through injection attacks. By creating immutable containers reduces this risk. The need for shell access can be replaced through the use of orchestration tools allowing for the rebuild, updating and redeployment of containers as needed.
+It should be noted having an immutable container may affect data persistence, it is also good practise to store data outside of containers.
+\subsection{Trusted Sources}
+There are many available open source containers available for an abundance of use cases, Linux server, Node.js, NGinx etc. However you should always know where these containers came from, and what the owners security practises are like, eg, how often are they updated. It is good practise to create your own trusted repository and run only trusted containers which you can verify.
+Even with trusted images there is always the risk of them being tampered in transit, it is always good practise to check signatures, this can easily be scripted prior to running a container.
+\subsection{Role-based Access}
+Due to the nature of many registries allowing anyone push and pull images it can have severe security implications. It is good practise to set up role-based access to these registries. This reduces and controls who can access and modify your images. As for pulling other users images, only ever use from trusted sources and always flag any vulnerable images you find.  As with the containers its always good practice to verify signatures and utilize registries with vulnerability scanning.
+\subsection{Host OS Precautions}
+When in the container security head space it is often easy to over look the Host. Based off the CIS Docker Benchmark guide to which the Docker Auditing Tool is based off recommend that there is user authentication on the host, along with access roles. Have specific permissions for binary file access and enable logging on the host.
+To ensure full isolation between the container and host it is recommended to run the Docker engine in kernel mode and the containers in user mode. It is also recommended to utilize the Linux namespaces, secgroups and cgroups on the host machine.
+\subsection{Automated Security Testing}
+This paper showcased two auditing tools available. There is an abundance of tools to choose from and it show be incorporated into CI/CD pipelines choosing a tool best suited to the application you are running. This ensures no containers leave development with any known vulnerabilities in them
+\subsection{Utilize Monitoring Tools}
+Away from vulnerabilities monitoring tools should be utilized to reduce and help fight against un wanted behaviour and denial of service attacks on your production containers.
+\subsection{Utilize Orchestration Tools}
+While Docker provides some security provisions, following on with your own provisions it is recommended to use an orchestration tool to benefit from the added security provided by them along with the easier control of your containers. Tools such as Kubernetes and Docker Swarm make the redeployment and updating of containers easy, along with providing secret management services out of the box.
+
+\subsection*{Final Note}
+It is easy to fire and forget about security when working with Containers, the main thing to take away from this paper is be proactive with security your choices and remember, \textit{"if my application does not need it, then why do I have it in my container?"}.
